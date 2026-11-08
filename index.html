@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>السجلات المدرسية</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -235,6 +240,10 @@ mark{background:var(--hi);color:inherit;border-radius:3px;padding:0 2px}
 .credit{border-top:1px solid var(--rule);background:var(--sheet);margin-top:24px}
 .credit .wrap{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;justify-content:space-between;padding-block:14px;font-size:14px;color:var(--ink-soft)}
 .credit b{color:var(--ink)}
+.credit .stats{display:inline-flex;flex-wrap:wrap;gap:6px 14px}
+.credit .stats span{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--desk);border:1px solid var(--rule)}
+.credit .stats b{font-variant-numeric:tabular-nums}
+@media print{.credit .stats{display:none}}
 .credit .wa{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:6px 14px;border-radius:999px;background:#1F8F4E;color:#fff;text-decoration:none;font-weight:700}
 .credit .wa:hover{background:#17733E}
 @media print{.credit,.wa-top{display:none!important}}
@@ -249,6 +258,8 @@ mark{background:var(--hi);color:inherit;border-radius:3px;padding:0 2px}
 .drop{display:flex;flex-direction:column;align-items:center;gap:4px;border:2px dashed var(--rule);border-radius:12px;padding:28px 16px;text-align:center;cursor:pointer;background:var(--desk);color:var(--brand)}
 .drop b{color:var(--ink)}.drop span{font-size:13px;color:var(--ink-soft)}.drop .fname{color:var(--brand);font-weight:700;font-size:14px;overflow-wrap:anywhere}
 .drop:hover,.drop.over{border-color:var(--brand);background:var(--auto-bg)}
+.drop.off,.drop.off:hover{cursor:not-allowed;opacity:.55;border-color:var(--rule);background:var(--desk)}
+.rep-off{margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#FFF6E0;color:#5B4300;border:1px solid #F2D58A;font-size:14px;line-height:1.7}
 .paste summary{cursor:pointer;color:var(--ink-soft);font-size:14px;min-height:32px}
 .paste textarea{margin-top:8px;resize:vertical;line-height:1.7}
 .prog{height:5px;border-radius:4px;background:var(--rule-soft);overflow:hidden;position:relative}
@@ -346,7 +357,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
 </header>
 <div class="notice" id="notice" hidden><div class="wrap" id="noticeText"></div></div>
 <main id="view"></main>
-<footer class="credit" id="credit"><div class="wrap"><span>تصميم وتطوير: <b>محمد عياد الشمري</b> – مدرسة الشيخ محمد بن إبراهيم الثانوية (تعليم حائل)</span></div></footer>
+<footer class="credit" id="credit"><div class="wrap"><span>تصميم وتطوير: <b>محمد عياد الشمري</b> – مدرسة الشيخ محمد بن إبراهيم الثانوية (تعليم حائل)</span><span class="stats" id="siteStats" hidden></span></div></footer>
 <footer id="siteNote"><div class="wrap">بيانات المدرسة وأعضاء اللجان وتعديلات الصفحات محفوظة للجميع ممن لديهم صلاحية التعديل. علامات «منجزة» تُحفظ في متصفحك فقط.</div></footer>
 <div class="toast" id="toast" role="status"></div>
 </div>
@@ -443,7 +454,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
   const AW='[\\u0621-\\u064A]';
   const wb=(pre,w)=>new RegExp('(?<!'+AW+')('+pre+')'+w+'(?!'+AW+')','g');
   // plain typos found in the source documents (exact words or short phrases)
-  const TYPOS=[['إب غالالمعلمين','إبلاغ المعلمين'],['الصف الدارسي','الصف الدراسي'],['الدارسي','الدراسي'],['الداسي','الدراسي'],['الدراس ي','الدراسي'],['الموهبين','الموهوبين'],
+  const TYPOS=[['لتطوير أدا السلوك','لتطوير أداء السلوك'],['إب غالالمعلمين','إبلاغ المعلمين'],['الصف الدارسي','الصف الدراسي'],['الدارسي','الدراسي'],['الداسي','الدراسي'],['الدراس ي','الدراسي'],['الموهبين','الموهوبين'],
     ['العملية التعليمة','العملية التعليمية'],['الصحة المرسية','الصحة المدرسية'],['التريخ','التاريخ'],['من العلمين','من المعلمين'],['المدراس','المدارس'],
     ['الكهام','المهام'],['برامح','برامج'],['المتعمدة','المعتمدة'],['الازمة','اللازمة'],['المتلقة','المتعلقة'],['للشؤن','للشؤون'],['الشؤن','الشؤون'],
     ['بقوم بإعادته','يقوم بإعادته'],['بنفذ التقويم','ينفذ التقويم'],['لمف الزميل','لملف الزميل'],['بينات العيادة','بيانات العيادة'],['بيمن فيهم','بمن فيهم'],
@@ -1239,6 +1250,23 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
       '<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},700)})<\/script></body></html>';
   }
   const safeName=s=>s.replace(/[\\/:*?"<>|#%]+/g,' ').replace(/\s+/g,' ').trim().slice(0,90);
+  /* ---------- visitor stats (only on the public copy hosted outside claude.ai) ---------- */
+  const GC='school-sejelat';
+  const GC_ON=location.protocol==='https:'&&!/claude|anthropic/.test(location.hostname);
+  function gcTrack(path,title){try{if(GC_ON&&window.goatcounter&&window.goatcounter.count)window.goatcounter.count({path:path,title:title});}catch(e){}}
+  function gcInit(){
+    if(!GC_ON)return;
+    window.goatcounter={no_onload:false};
+    const sc=document.createElement('script');sc.async=true;sc.src='https://gc.zgo.at/count.js';sc.dataset.goatcounter='https://'+GC+'.goatcounter.com/count';document.head.appendChild(sc);
+    const get=q=>fetch('https://'+GC+'.goatcounter.com/counter/'+q).then(r=>r.ok?r.json():null).catch(()=>null);
+    const num=v=>v&&v.count?ar(String(v.count).replace(/[^0-9]/g,'')):null;
+    setTimeout(async()=>{
+      const [all,month,use]=await Promise.all([get('TOTAL.json'),get('TOTAL.json?start=month'),get(encodeURIComponent('/use')+'.json')]);
+      const box=document.getElementById('siteStats');if(!box||!num(all))return;
+      box.innerHTML='<span>👥 الزوار: <b>'+num(all)+'</b></span>'+(num(month)?'<span>📅 هذا الشهر: <b>'+num(month)+'</b></span>':'')+(num(use)?'<span>🖨 مستفيدون طبعوا أو حفظوا: <b>'+num(use)+'</b></span>':'');
+      box.hidden=false;
+    },1500);
+  }
   function localDL(){
     return {save:async({filename,data})=>{
       const isHtml=/\.html$/.test(filename);
@@ -1252,7 +1280,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
   async function offerFile(name,content,ext){
     ext=ext||'html';
     if(!ST.dl){toast('التنزيل غير متاح في هذا العرض. افتح الصفحة من claude.ai');return;}
-    try{const how=await ST.dl.save({filename:safeName(name)+'.'+ext,data:content});toast(ext==='pdf'?'حُفظ ملف PDF':how==='tab'?'فُتحت صفحة الطباعة في نافذة جديدة':'افتح الملف المنزّل وستظهر نافذة الطباعة مباشرة');}
+    try{const how=await ST.dl.save({filename:safeName(name)+'.'+ext,data:content});gcTrack('/use',ext==='pdf'?'حفظ PDF':'طباعة');toast(ext==='pdf'?'حُفظ ملف PDF':how==='tab'?'فُتحت صفحة الطباعة في نافذة جديدة':'افتح الملف المنزّل وستظهر نافذة الطباعة مباشرة');}
     catch(e){if(e&&e.code==='declined')return;if(e&&e.code==='rate_limited'){toast('هناك نافذة تنزيل مفتوحة بالفعل');return;}toast('تعذّر تنزيل الملف');}
   }
 
@@ -1476,7 +1504,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
         r.pages.map((pg,i)=>'<li><a href="#r-'+r.id+'-'+(i+1)+'"'+(i===n?' aria-current="page"':'')+'><span class="n num">'+ar(i+1)+'</span><span>'+esc(yrT(pg.title))+'</span>'+(ST.overrides[pageKey(r,i)]?'<span class="e" title="معدّلة">✎</span>':'')+(isDone(r,i)?'<span class="x" aria-label="منجزة">✓</span>':'')+'</a></li>').join('')+'</ol></aside>'+
       '<div style="display:grid;gap:12px;min-width:0"><div class="mobile-pick"><select id="pick" aria-label="انتقل إلى صفحة">'+r.pages.map((pg,i)=>'<option value="'+(i+1)+'"'+(i===n?' selected':'')+'>'+ar(i+1)+'. '+esc(yrT(pg.title))+(isDone(r,i)?' ✓':'')+'</option>').join('')+'</select></div>'+
       '<article class="paper"><div class="ph"><p class="crumbs"><a href="#">السجلات</a> / '+esc(r.title)+' / <span class="num">صفحة '+ar(n+1)+' من '+ar(r.pages.length)+'</span>'+(edited?' <span class="badge">معدّلة</span>':'')+'</p>'+
-        '<div class="tools"><button class="btn primary" id="printBtn" type="button">🖨 طباعة</button><button class="btn" id="pdfBtn" type="button">⬇ حفظ PDF</button><button class="btn" id="editBtn" type="button">✎ تعديل الصفحة</button><button class="btn mark" id="markBtn" type="button" aria-pressed="'+isDone(r,n)+'">'+(isDone(r,n)?'✓ منجزة':'تعليم كمنجزة')+'</button></div>'+
+        '<div class="tools"><button class="btn primary" id="printBtn" type="button">🖨 طباعة الصفحة</button><button class="btn" id="pdfBtn" type="button">⬇ الصفحة PDF</button><button class="btn primary" id="printAll2" type="button">🖨 طباعة السجل كاملًا ('+ar(r.pages.length)+' ص)</button><button class="btn" id="pdfAll2" type="button">⬇ السجل كاملًا PDF</button><button class="btn" id="editBtn" type="button">✎ تعديل الصفحة</button><button class="btn mark" id="markBtn" type="button" aria-pressed="'+isDone(r,n)+'">'+(isDone(r,n)?'✓ منجزة':'تعليم كمنجزة')+'</button></div>'+
         '</div>'+
         (isAssignPage(p.title)?'<div class="linked" id="assignBar"><span>المكلف في هذا القرار ('+esc(assignJob(p.title))+'):</span> '+
           ((ST.db&&ST.canWrite)?'<span id="assignPick"></span>':'<b>'+esc(assigneeOf(r,n)||'لم يُحدَّد')+'</b>')+
@@ -1491,6 +1519,8 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     view.querySelector('#printAll').addEventListener('click',()=>printRecord(r));
     view.querySelector('#pdfBtn').addEventListener('click',()=>pdfPage(r,n));
     view.querySelector('#pdfAll').addEventListener('click',()=>pdfRecord(r));
+    view.querySelector('#printAll2').addEventListener('click',()=>printRecord(r));
+    view.querySelector('#pdfAll2').addEventListener('click',()=>pdfRecord(r));
     view.querySelector('#markBtn').addEventListener('click',e=>{const k=r.id+':'+n;if(done[k])delete done[k];else done[k]=1;save();const on=!!done[k];e.currentTarget.setAttribute('aria-pressed',on);e.currentTarget.textContent=on?'✓ منجزة':'تعليم كمنجزة';
       const a=view.querySelector('#toc [aria-current]');const x=a&&a.querySelector('.x');if(a&&on&&!x)a.insertAdjacentHTML('beforeend','<span class="x" aria-label="منجزة">✓</span>');if(!on&&x)x.remove();toast(on?'عُلّمت الصفحة كمنجزة':'أُلغي التعليم');});
     view.querySelector('#editBtn').addEventListener('click',()=>startEdit(r,n));
@@ -2211,11 +2241,11 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     const can=!!ST.sample;
     view.innerHTML='<div class="wrap panel-page"><header><h1>تحليل التقارير</h1><p>ارفع تقرير التقويم الذاتي أو الخارجي، أو بطاقة نافس، أو تقرير نتائج اختبار القدرات العامة أو الاختبار التحصيلي، فيُحلَّل ويصدر منه تقرير بالنتائج والمقارنات ونقاط القوة وجوانب التحسين، مع خطة تحسين جاهزة للطباعة.</p></header>'+
       '<form class="card" id="repForm"><h2>رفع التقرير</h2>'+
-      '<fieldset class="seg"><legend>نوع التقرير</legend>'+Object.entries(REP_TYPES).map(([k,v],i)=>'<label><input type="radio" name="rtype" value="'+k+'"'+(i===0?' checked':'')+'>'+v+'</label>').join('')+'</fieldset>'+
-      '<label class="drop" id="repDrop" for="repFile"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg><b>اختر ملف التقرير أو اسحبه إلى هنا</b><span>PDF أو Word (docx)، أو صور صفحات التقرير</span><span class="fname" id="repName">'+esc(repState.files.map(f=>f.name).join('، '))+'</span></label>'+
-      '<input type="file" id="repFile" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" multiple hidden>'+
-      '<details class="paste"><summary>أو الصق نص التقرير</summary><textarea id="repText" class="cell-in" rows="7" placeholder="انسخ نص التقرير من ملفه والصقه هنا"></textarea></details>'+
-      '<div class="row-actions"><button class="btn primary" type="submit" id="repGo"'+(can&&!repState.busy?'':' disabled')+'>تحليل التقرير</button><button class="btn" type="button" id="repStop"'+(repState.busy?'':' hidden')+'>إيقاف</button><span class="status" id="repStatus" aria-live="polite">'+esc(repState.busy?repState.progress:(can?'':(ST.ready?'التحليل متاح عند فتح الموقع من claude.ai':'جارٍ التهيئة…')))+'</span></div>'+
+      '<fieldset class="seg"'+(can?'':' disabled')+'><legend>نوع التقرير</legend>'+Object.entries(REP_TYPES).map(([k,v],i)=>'<label><input type="radio" name="rtype" value="'+k+'"'+(i===0?' checked':'')+'>'+v+'</label>').join('')+'</fieldset>'+
+      (can||!ST.ready?'':'<p class="rep-off" role="note">🚧 <b>تحت الإنشاء</b> — خدمة تحليل التقارير قيد التطوير وستتوفر قريبًا بإذن الله. باقي خدمات الموقع تعمل كاملة.</p>')+'<label class="drop'+(can||!ST.ready?'':' off')+'" id="repDrop"'+(can?' for="repFile"':' aria-disabled="true"')+'><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg><b>اختر ملف التقرير أو اسحبه إلى هنا</b><span>PDF أو Word (docx)، أو صور صفحات التقرير</span><span class="fname" id="repName">'+esc(repState.files.map(f=>f.name).join('، '))+'</span></label>'+
+      '<input type="file" id="repFile" accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/*" multiple hidden'+(can?'':' disabled')+'>'+
+      '<details class="paste"><summary>أو الصق نص التقرير</summary><textarea id="repText" class="cell-in" rows="7" placeholder="انسخ نص التقرير من ملفه والصقه هنا"'+(can?'':' disabled')+'></textarea></details>'+
+      '<div class="row-actions"><button class="btn primary" type="submit" id="repGo"'+(can&&!repState.busy?'':' disabled')+'>تحليل التقرير</button><button class="btn" type="button" id="repStop"'+(repState.busy?'':' hidden')+'>إيقاف</button><span class="status" id="repStatus" aria-live="polite">'+esc(repState.busy?repState.progress:(can?'':(ST.ready?'':'جارٍ التهيئة…')))+'</span></div>'+
       '<div class="prog" id="repProg"'+(repState.busy?'':' hidden')+'><i></i></div></form>'+
       (cur?repResult(repState.openId,cur,ro):'')+
       (list.length?'<div class="card"><h2>التحليلات المحفوظة</h2><ul class="replist">'+list.map(([id,r])=>'<li'+(id===repState.openId?' aria-current="true"':'')+'><div class="t"><b>تحليل '+esc(REP_TYPES[r.type]||'')+'</b><small>'+esc(r.file||'')+' · '+esc(hijriLong(r.at))+'</small></div><button class="btn" type="button" data-open="'+id+'">'+(id===repState.openId?'معروض':'عرض')+'</button>'+(ro?'':'<button class="btn danger" type="button" data-del="'+id+'">حذف</button>')+'</li>').join('')+'</ul></div>':'')+
@@ -2230,7 +2260,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     fi.addEventListener('change',()=>setFiles(fi.files));
     ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
     ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
-    drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length)setFiles(e.dataTransfer.files);});
+    drop.addEventListener('drop',e=>{if(!ST.sample)return;if(e.dataTransfer&&e.dataTransfer.files.length)setFiles(e.dataTransfer.files);});
     document.getElementById('repText').addEventListener('input',()=>{dirtyForm=true;});
     document.getElementById('repStop').addEventListener('click',()=>{if(repState.ctrl)repState.ctrl.abort();});
     f.addEventListener('submit',e=>{e.preventDefault();runAnalysis(f.elements.rtype.value,document.getElementById('repText').value);});
@@ -2397,6 +2427,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     if(DEMO){db=localDB();assets=null;}
     ST.assets=assets;ST.sample=sample;
     if(!dl)dl=localDL();
+    gcInit();
     ST.dl=dl;ST.db=db;
     if(!db){ST.ready=true;notice('تعرض الصفحة النسخة الأصلية. حفظ البيانات واللجان والتعديلات يعمل عند فتح الموقع من claude.ai مع تسجيل الدخول.');softRefresh();return;}
     let can=null;try{can=user?await user.can('data.write'):null;}catch(e){}
