@@ -1214,15 +1214,29 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
       '<div class="mid">'+logoTag()+'</div>'+
       '<div class="l">العام الدراسي: '+esc(s.year||'')+'هـ</div></div>';
   }
+  /* local (per-browser) asset store, used when the page has no hosted asset store (demo / standalone copy) */
+  const LOCAL_URLS=new Map();
+  const blobURL=id=>LOCAL_URLS.get(id)||('/_blob/'+id);
+  function localAssets(){
+    const open=()=>new Promise((ok,no)=>{try{const r=indexedDB.open('sr-assets',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);}catch(e){no(e);}});
+    const tx=(mode,fn)=>open().then(db=>new Promise((ok,no)=>{const t=db.transaction('f',mode);const st=t.objectStore('f');const r=fn(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error);}));
+    return {
+      local:true,
+      async load(){try{const keys=await tx('readonly',st=>st.getAllKeys());for(const k of keys||[]){const b=await tx('readonly',st=>st.get(k));if(b)LOCAL_URLS.set(k,URL.createObjectURL(b));}}catch(e){}},
+      async upload(file){const id='loc_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);const blob=new Blob([await file.arrayBuffer()],{type:file.type||'application/octet-stream'});
+        try{await tx('readwrite',st=>st.put(blob,id));}catch(e){}
+        LOCAL_URLS.set(id,URL.createObjectURL(blob));return {id};}
+    };
+  }
   const logoId=()=>{const v=String(ST.settings.logo||'');return /^[A-Za-z0-9_-]{4,80}$/.test(v)?v:'';};
-  const logoTag=(src)=>{const id=logoId();if(!id)return '';return '<img src="'+esc(src||('/_blob/'+id))+'" alt="الشعار">';};
+  const logoTag=(src)=>{const id=logoId();if(!id)return '';return '<img src="'+esc(src||blobURL(id))+'" alt="الشعار">';};
   async function logoData(){const id=logoId();if(!id)return '';
-    try{const b=await (await fetch('/_blob/'+id)).blob();return await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result));fr.onerror=no;fr.readAsDataURL(b);});}catch(e){return '';}}
+    try{const b=await (await fetch(blobURL(id))).blob();return await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result));fr.onerror=no;fr.readAsDataURL(b);});}catch(e){return '';}}
   const fontId=k=>{const v=String(ST.settings[k]||'');return /^[A-Za-z0-9_-]{4,80}$/.test(v)?v:'';};
   function syncFonts(){
     const r=fontId('fontReg'),b=fontId('fontBold');let css='';
-    if(r)css+="@font-face{font-family:'MoeFont';src:url('/_blob/"+r+"');font-weight:100 500;font-display:swap}";
-    if(b||r)css+="@font-face{font-family:'MoeFont';src:url('/_blob/"+(b||r)+"');font-weight:600 900;font-display:swap}";
+    if(r)css+="@font-face{font-family:'MoeFont';src:url('"+blobURL(r)+"');font-weight:100 500;font-display:swap}";
+    if(b||r)css+="@font-face{font-family:'MoeFont';src:url('"+blobURL(b||r)+"');font-weight:600 900;font-display:swap}";
     const el=document.getElementById('moeFontFace');if(el&&el.textContent!==css)el.textContent=css;
   }
   function syncBrand(){
@@ -1298,7 +1312,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
   function pdfLetterhead(){
     const s=ST.settings,id=logoId();
     return '<div class="plh"><div class="r">المملكة العربية السعودية<br>وزارة التعليم<br>'+esc(s.admin||'')+'<br>'+esc(s.school||'')+'</div>'+
-      '<div class="mid">'+(id?'<img src="/_blob/'+esc(id)+'" alt="">':'')+'</div>'+
+      '<div class="mid">'+(id?'<img src="'+esc(blobURL(id))+'" alt="">':'')+'</div>'+
       '<div class="l">العام الدراسي: '+esc(s.year||'')+'هـ</div></div>';
   }
   function layoutSheet(host,lh,title,html){
@@ -1376,7 +1390,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     return [pageSheet(r,n)];
   }
   const recordSheets=r=>r.pages.flatMap((p,n)=>pageSheets(r,n));
-  async function blobData(id){try{const b=await (await fetch('/_blob/'+id)).blob();return await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result));fr.onerror=no;fr.readAsDataURL(b);});}catch(e){return '';}}
+  async function blobData(id){try{const b=await (await fetch(blobURL(id))).blob();return await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result));fr.onerror=no;fr.readAsDataURL(b);});}catch(e){return '';}}
   async function fontCssData(){
     const r=fontId('fontReg'),b=fontId('fontBold');let css='';
     const rd=r?await blobData(r):'',bd=b?await blobData(b):'';
@@ -2425,6 +2439,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     const use=window.claude&&window.claude.use?n=>window.claude.use(n):()=>Promise.resolve(null);
     let [db,user,dl,assets,sample]=await Promise.all([DEMO?null:use('db'),DEMO?null:use('user'),use('downloads'),DEMO?null:use('assets'),use('sample')]);
     if(DEMO){db=localDB();assets=null;}
+    if(!assets){assets=localAssets();await assets.load();}
     ST.assets=assets;ST.sample=sample;
     if(!dl)dl=localDL();
     gcInit();
