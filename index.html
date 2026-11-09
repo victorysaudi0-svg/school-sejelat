@@ -218,6 +218,16 @@ td.warn{color:var(--warn);font-weight:700}td.bad{color:var(--bad);font-weight:70
 .ih-box ol{margin:0;padding:0 20px 0 0;display:grid;gap:6px;line-height:1.8}
 @media print{.readbtn,.readpanel{display:none!important}}
 .readbtn,.readpanel,.insthelp{zoom:var(--rz,1)}
+.tbltools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--brand) 7%,var(--sheet));border:1px solid color-mix(in srgb,var(--brand) 22%,var(--rule))}
+.tbltools .tl{font-weight:700;font-size:13px;color:var(--brand)}.tbltools .btn{font-size:13px;padding:6px 10px}.tbltools .sep{width:1px;align-self:stretch;background:var(--rule);margin:0 4px}
+.doc[contenteditable="true"] td.tcur,.doc[contenteditable="true"] th.tcur{outline:2px solid var(--brand);outline-offset:-2px;background:color-mix(in srgb,var(--brand) 8%,transparent)}
+.tplpick{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.tplopt{position:relative;cursor:pointer}.tplopt input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.tplopt span{display:grid;gap:8px;padding:10px;border:1.5px solid var(--rule);border-radius:12px;background:var(--sheet);height:100%}
+.tplopt .sw{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--rule)}.tplopt .sw em{flex:1}
+.tplopt b{font-size:13.5px}.tplopt input:checked+span{border-color:#15445a;box-shadow:0 0 0 3px color-mix(in srgb,#0da9a6 30%,transparent)}
+.tplopt input:focus-visible+span{outline:2px solid var(--brand);outline-offset:2px}
+.sigrow{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px}
 /* top bar */
 .bar{--hg1:#0E5C55;--hg2:#083F3A;background:radial-gradient(circle at 15% 120%,rgba(255,255,255,.10) 0 18%,transparent 19%),radial-gradient(circle at 92% -30%,rgba(242,181,58,.16) 0 22%,transparent 23%),linear-gradient(160deg,var(--hg1),var(--hg2));color:#fff}
 .strip{background:rgba(0,0,0,.18);font-size:13px}
@@ -2103,40 +2113,59 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     if(doc.classList.contains('letters')){doc.classList.remove('letters');doc.classList.add('doc');}
     doc.innerHTML=rawHTML(r,n);
     doc.contentEditable='true';doc.focus();
-    bar.innerHTML='<div class="editbar"><span class="grow">وضع التعديل: اكتب مباشرة في الصفحة والجداول. لإضافة صفوف ضع المؤشر داخل صف في الجدول ثم اضغط «إضافة صف». اسم المدرسة والعام وأسماء الأعضاء تُضاف تلقائيًا بعد الحفظ.</span>'+
-      '<button class="btn" id="rowAdd" type="button" title="ضع المؤشر داخل صف في الجدول أولًا">➕ إضافة صف</button><button class="btn" id="rowAdd5" type="button">➕ ٥ صفوف</button><button class="btn" id="rowDel" type="button">➖ حذف الصف</button>'+
+    bar.innerHTML='<div class="editbar"><span class="grow">وضع التعديل: اكتب مباشرة في الصفحة والجداول. لتعديل جدول اضغط داخل أي خانة فيه، ثم استخدم أزرار الجدول لإضافة صفوف أو أعمدة أو حذفها. اسم المدرسة والعام وأسماء الأعضاء تُضاف تلقائيًا بعد الحفظ.</span>'+
+      '<div class="tbltools" role="toolbar" aria-label="أدوات الجدول"><span class="tl">الجدول:</span>'+
+        '<button class="btn" data-t="rowAbove" type="button">⬆ صف فوق</button><button class="btn" data-t="rowBelow" type="button">⬇ صف تحت</button><button class="btn" data-t="row5" type="button">＋٥ صفوف</button><button class="btn" data-t="rowDel" type="button">✕ حذف الصف</button>'+
+        '<span class="sep" aria-hidden="true"></span><button class="btn" data-t="colRight" type="button">➡ عمود يمين</button><button class="btn" data-t="colLeft" type="button">⬅ عمود يسار</button><button class="btn" data-t="colDel" type="button">✕ حذف العمود</button></div>'+
       '<button class="btn primary" id="saveEdit" type="button">حفظ التعديلات</button><button class="btn" id="cancelEdit" type="button">إلغاء</button>'+
       (edited?'<button class="btn danger" id="resetEdit" type="button">استعادة النص الأصلي</button>':'')+'<span class="status" id="editStatus"></span></div>';
     document.getElementById('editBtn').disabled=true;
     const st=document.getElementById('editStatus');
-    /* table rows: remember the last row the cursor was in */
-    let curRow=null;
-    const track=()=>{const s=window.getSelection();if(!s||!s.rangeCount)return;let n=s.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentNode;const tr=n&&n.closest&&n.closest('tr');if(tr&&doc.contains(tr))curRow=tr;};
+    /* table editing: remember the cell the cursor was in; operate on a logical grid so merged cells stay intact */
+    let curCell=null;
+    const track=()=>{const s=window.getSelection();if(!s||!s.rangeCount)return;let n=s.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentNode;const td=n&&n.closest&&n.closest('td,th');if(td&&doc.contains(td)){if(curCell&&curCell!==td)curCell.classList.remove('tcur');curCell=td;td.classList.add('tcur');}};
     doc.addEventListener('keyup',track);doc.addEventListener('mouseup',track);doc.addEventListener('focusin',track);
     const toLatin=s=>s.replace(/[٠-٩]/g,d=>AR.indexOf(d));
-    const addRows=k=>{
-      track();
-      let tr=curRow;
-      if(!tr){const tables=doc.querySelectorAll('table');if(!tables.length){toast('لا يوجد جدول في هذه الصفحة');return;}const tb=tables[tables.length-1];tr=tb.rows[tb.rows.length-1];toast('أُضيفت الصفوف في آخر جدول. ضع المؤشر داخل جدول آخر لاختياره');}
-      for(let i=0;i<k;i++){
-        const nr=tr.cloneNode(true);
-        [...nr.cells].forEach(c=>{c.removeAttribute('rowspan');c.innerHTML='';});
-        const first=(tr.cells[0]&&tr.cells[0].textContent||'').trim();
-        if(/^[0-9٠-٩]+$/.test(first)&&nr.cells[0]){const v=+toLatin(first)+1;nr.cells[0].textContent=/[٠-٩]/.test(first)?ar(v):String(v);}
-        tr.after(nr);tr=nr;
-      }
-      curRow=tr;st.className='status';st.textContent='أُضيف '+ar(k)+(k===1?' صف':' صفوف')+'. اضغط «حفظ التعديلات» لحفظها';
-    };
-    document.getElementById('rowAdd').onclick=()=>addRows(1);
-    document.getElementById('rowAdd5').onclick=()=>addRows(5);
-    document.getElementById('rowDel').onclick=()=>{track();if(!curRow){toast('ضع المؤشر داخل الصف الذي تريد حذفه');return;}
-      const tb=curRow.closest('table');if(tb.rows.length<=2){toast('لا يمكن حذف آخر صف في الجدول');return;}
-      if(curRow===tb.rows[0]){toast('هذا صف العناوين، لا يُحذف');return;}
-      const nx=curRow.previousElementSibling||curRow.nextElementSibling;curRow.remove();curRow=nx;st.className='status';st.textContent='حُذف الصف. اضغط «حفظ التعديلات» لحفظ التغيير';};
+    const msg=t=>{st.className='status';st.textContent=t+' اضغط «حفظ التعديلات» لحفظها.';};
+    const grid=tb=>{const G=[],pos=new Map();[...tb.rows].forEach((tr,r)=>{G[r]=G[r]||[];let c=0;[...tr.cells].forEach(cell=>{while(G[r][c])c++;const rs=Math.max(1,cell.rowSpan||1),cs=Math.max(1,cell.colSpan||1);pos.set(cell,{r,c,rs,cs});for(let i=0;i<rs;i++)for(let j=0;j<cs;j++){G[r+i]=G[r+i]||[];G[r+i][c+j]=cell;}c+=cs;});});
+      const W=Math.max(0,...G.map(x=>x?x.length:0));return {G,pos,W};};
+    const mkCell=(like,cs)=>{const td=document.createElement('td');if(like){if(like.className)td.className=like.className.replace(/\btcur\b/,'').trim();const al=like.getAttribute('style');if(al)td.setAttribute('style',al.replace(/background[^;]*;?/g,''));}if(cs>1)td.colSpan=cs;td.innerHTML='<br>';return td;};
+    const placeCell=(tr,td,col,info)=>{const after=[...tr.cells].find(x=>info.pos.get(x)&&info.pos.get(x).c>col);if(after)tr.insertBefore(td,after);else tr.appendChild(td);};
+    const numberCol=(tb)=>{/* keep a running 1,2,3 in the first column when it looks like a serial column */
+      const rows=[...tb.rows];let seen=0;rows.forEach(tr=>{const c0=tr.cells[0];if(!c0)return;const t=c0.textContent.trim();if(/^[0-9٠-٩]+$/.test(t))seen++;});
+      if(seen<1)return;let k=0,arab=false;rows.forEach(tr=>{const c0=tr.cells[0];if(!c0)return;const t=c0.textContent.trim();if(/^[0-9٠-٩]+$/.test(t)||(k>0&&t===''&&c0.dataset.newrow)){if(/[٠-٩]/.test(t))arab=true;k++;c0.textContent=arab||/[٠-٩]/.test(t)?ar(k):String(k);delete c0.dataset.newrow;}});};
+    const need=()=>{track();if(!curCell||!doc.contains(curCell)){toast('اضغط أولًا داخل خانة في الجدول الذي تريد تعديله');return null;}return curCell.closest('table');};
+    const insertRow=(below,count)=>{const tb=need();if(!tb)return;for(let t=0;t<count;t++){const info=grid(tb),p=info.pos.get(curCell);const r=below?p.r+p.rs-1:p.r;const ref=tb.rows[r];
+        const nr=document.createElement('tr');if(ref.className)nr.className=ref.className;
+        for(let c=0;c<info.W;){const cell=info.G[r]&&info.G[r][c];if(!cell){nr.appendChild(mkCell(null,1));c++;continue;}const q=info.pos.get(cell);
+          const spans=below?(q.r+q.rs-1>r):(q.r<r);
+          if(spans){cell.rowSpan=q.rs+1;c+=q.cs;}else{const like=info.G[r][c];const td=mkCell(like&&like.tagName==='TD'?like:null,q.cs);if(c===0)td.dataset.newrow='1';nr.appendChild(td);c+=q.cs;}}
+        if(below)ref.after(nr);else ref.before(nr);if(below){const c0=nr.cells[0];if(c0){curCell.classList.remove('tcur');curCell=c0;c0.classList.add('tcur');}}}
+      numberCol(tb);msg(count>1?'أُضيف '+ar(count)+' صفوف.':'أُضيف صف.');};
+    const deleteRow=()=>{const tb=need();if(!tb)return;const info=grid(tb),p=info.pos.get(curCell),r=p.r;if(tb.rows.length<=1){toast('لا يمكن حذف آخر صف في الجدول');return;}
+      const tr=tb.rows[r],done=new Set();
+      for(let c=0;c<info.W;c++){const cell=info.G[r]&&info.G[r][c];if(!cell||done.has(cell))continue;done.add(cell);const q=info.pos.get(cell);
+        if(q.rs>1){if(q.r<r){cell.rowSpan=q.rs-1;}else{cell.rowSpan=q.rs-1;const next=tb.rows[r+1];placeCell(next,cell,q.c,info);}}}
+      const nx=tb.rows[r+1]||tb.rows[r-1];tr.remove();curCell=null;if(nx&&nx.cells[0]){curCell=nx.cells[0];curCell.classList.add('tcur');}numberCol(tb);msg('حُذف الصف.');};
+    const insertCol=(left)=>{const tb=need();if(!tb)return;const info=grid(tb),p=info.pos.get(curCell);
+      /* in a right-to-left table «يسار» means after the current column */
+      const c=left?p.c+p.cs-1:p.c,done=new Set();
+      for(let r=0;r<info.G.length;r++){const cell=info.G[r]&&info.G[r][c];if(!cell||done.has(cell))continue;done.add(cell);const q=info.pos.get(cell);
+        const spans=left?(q.c+q.cs-1>c):(q.c<c);
+        if(spans){cell.colSpan=q.cs+1;continue;}
+        const td=mkCell(cell.tagName==='TD'?cell:null,1);if(q.rs>1)td.rowSpan=q.rs;if(cell.tagName==='TH'){const th=document.createElement('th');th.innerHTML='<br>';if(q.rs>1)th.rowSpan=q.rs;if(cell.className)th.className=cell.className.replace(/\btcur\b/,'').trim();if(left)cell.after(th);else cell.before(th);}else{if(left)cell.after(td);else cell.before(td);}}
+      msg('أُضيف عمود.');};
+    const deleteCol=()=>{const tb=need();if(!tb)return;const info=grid(tb),p=info.pos.get(curCell),c=p.c;if(info.W<=1){toast('لا يمكن حذف آخر عمود في الجدول');return;}
+      const row=p.r,nb=(info.G[row]||[])[c+p.cs]||(info.G[row]||[])[c-1]||null;
+      const done=new Set();for(let r=0;r<info.G.length;r++){const cell=info.G[r]&&info.G[r][c];if(!cell||done.has(cell))continue;done.add(cell);const q=info.pos.get(cell);if(q.cs>1)cell.colSpan=q.cs-1;else cell.remove();}
+      curCell=null;if(nb&&doc.contains(nb)){curCell=nb;nb.classList.add('tcur');}msg('حُذف العمود.');};
+    bar.querySelectorAll('[data-t]').forEach(btn=>{btn.addEventListener('mousedown',e=>e.preventDefault());btn.addEventListener('click',()=>{
+      const t=btn.dataset.t;if(t==='rowAbove')insertRow(false,1);else if(t==='rowBelow')insertRow(true,1);else if(t==='row5')insertRow(true,5);else if(t==='rowDel')deleteRow();else if(t==='colRight')insertCol(false);else if(t==='colLeft')insertCol(true);else if(t==='colDel')deleteCol();});});
     document.getElementById('cancelEdit').onclick=()=>{editing=false;route(true);};
     document.getElementById('saveEdit').onclick=async e=>{
       e.currentTarget.disabled=true;st.className='status';st.textContent='جارٍ الحفظ…';
       doc.querySelectorAll('mark').forEach(m=>m.replaceWith(...m.childNodes));
+      doc.querySelectorAll('.tcur').forEach(x=>x.classList.remove('tcur'));doc.querySelectorAll('[data-newrow]').forEach(x=>delete x.dataset.newrow);
       const h=sanitize(doc.innerHTML);
       try{await ST.db.doc('pages/'+key).set({h,at:new Date().toISOString(),title:r.pages[n].title});ST.overrides[key]={h};editing=false;toast('حُفظت تعديلات الصفحة');route(true);}
       catch(err){e.currentTarget.disabled=false;st.className='status err';st.textContent=err&&err.code==='quota_exceeded'?'امتلأت مساحة التخزين، احذف تعديلات قديمة ثم أعد المحاولة':'تعذّر الحفظ. تحقّق من صلاحيتك ثم أعد المحاولة';}
@@ -2878,7 +2907,8 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
   };
   const hijriParts=d=>{try{const p=new Intl.DateTimeFormat('en-u-ca-islamic-umalqura',{day:'numeric',month:'numeric',year:'numeric'}).formatToParts(d||new Date());const g=t=>+((p.find(x=>x.type===t)||{}).value||0);return {d:g('day'),m:g('month'),y:g('year')};}catch(e){return {d:1,m:1,y:1448};}};
   const HM=['محرم','صفر','ربيع الأول','ربيع الآخر','جمادى الأولى','جمادى الآخرة','رجب','شعبان','رمضان','شوال','ذو القعدة','ذو الحجة'];
-  const todayH=()=>hijriToday()+'هـ';
+  const rtlD=v=>String(v||'').replace(/[\u200e\u200f]/g,'').replace(/\s*\/\s*/g,'/\u200f');
+  const todayH=()=>rtlD(hijriToday())+'هـ';
   const principal=()=>ST.settings.principal||'';
 
   /* ---------- standards guide ---------- */
@@ -3037,7 +3067,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     general:{t:'خطاب',subj:'',body:(n,o)=>(n?'المكرم/ '+n+'\t\tوفقه الله\n':'')+'السلام عليكم ورحمة الله وبركاته،\n\n'+(o.task||'')}
   };
   function letterSheets(o){
-    const ty=LTYPES[o.type],date=o.date||todayH();
+    const ty=LTYPES[o.type],date=rtlD(o.date||todayH());
     const names=o.type==='committee'?['']:(o.names.length?o.names:['']);
     return names.map(n=>{
       const sm=ST.staff.find(s=>s.name===n);
@@ -3084,44 +3114,89 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     document.getElementById('lPdf').onclick=()=>{const o=opts();makePdf(LTYPES[o.type].t,letterSheets(o));};
   }
 
-  /* ---------- certificates ---------- */
-  function certHTML(o,names,logo){
-    const s=ST.settings;
-    const css='@page{size:A4 landscape;margin:0}*{box-sizing:border-box}body{margin:0;font-family:"MoeFont","Helvetica Neue W23 for SKY","IBM Plex Sans Arabic",Tahoma,sans-serif;color:#14211F;background:#fff}'+
-      '.c{width:297mm;height:210mm;padding:12mm;page-break-after:always;break-after:page;position:relative}.c:last-child{page-break-after:auto}'+
-      '.f{height:100%;border:3mm solid #0E5C55;outline:1mm solid #C9A227;outline-offset:-6mm;border-radius:4mm;padding:14mm 22mm;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4mm;position:relative;overflow:hidden}'+
-      '.f:before,.f:after{content:"";position:absolute;width:70mm;height:70mm;border-radius:50%;background:radial-gradient(circle,rgba(201,162,39,.18),transparent 70%)}.f:before{top:-30mm;right:-30mm}.f:after{bottom:-30mm;left:-30mm}'+
-      '.top{width:100%;display:flex;justify-content:space-between;font-size:10pt;line-height:1.5;text-align:right}.top .l{text-align:left}.top img{max-height:20mm;max-width:40mm}'+
-      'h1{font-size:34pt;color:#0E5C55;margin:4mm 0 0;letter-spacing:0}.sub{font-size:13pt;color:#7A5C12}.nm{font-size:26pt;font-weight:700;margin:3mm 0;padding:0 14mm 2mm;border-bottom:.6mm solid #C9A227}'+
-      '.tx{font-size:15pt;line-height:1.9;max-width:210mm}.sig{margin-top:auto;width:100%;display:flex;justify-content:space-between;font-size:12pt;line-height:1.7}.sig b{display:block}'+
+  /* ---------- certificates (templates in the Ministry's brand palette; no ministry logo, the school's own logo only) ---------- */
+  const MOE={navy:'#15445a',teal:'#0da9a6',green:'#07a869',blue:'#3d7eb9',gold:'#c1b489',gray:'#c2c1c1',sky:'#69cee3',deep:'#218caa'};
+  const CERT_TPL=[
+    ['teal','هوية الوزارة · فيروزي',[MOE.navy,MOE.teal,MOE.gold]],
+    ['green','هوية الوزارة · أخضر',[MOE.navy,MOE.green,MOE.gray]],
+    ['blue','هوية الوزارة · أزرق',[MOE.blue,MOE.sky,MOE.navy]],
+    ['pattern','نقش هندسي',[MOE.navy,MOE.gold,MOE.teal]],
+    ['classic','كلاسيكي ذهبي',['#0E5C55','#C9A227','#FFFBEF']]
+  ];
+  const SIG_TITLES=['مدير المدرسة','وكيل المدرسة','الموجه الطلابي','رائد النشاط','رائد الصف','معلم المادة','منسق الموهوبين','الموجه الصحي','رئيس اللجنة'];
+  const REC_TITLES=['','المعلم','الطالب','الموجه الطلابي','رائد النشاط','وكيل المدرسة','الإداري','ولي الأمر','الأستاذ'];
+  function certCSS(t){
+    const enc=s=>'url("data:image/svg+xml,'+encodeURIComponent(s)+'")';
+    const star=enc('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect width="40" height="40" fill="'+MOE.navy+'"/><path d="M20 4l4.7 11.3L36 20l-11.3 4.7L20 36l-4.7-11.3L4 20l11.3-4.7z" fill="none" stroke="'+MOE.gold+'" stroke-width="1.6"/><path d="M20 10l2.9 7.1L30 20l-7.1 2.9L20 30l-2.9-7.1L10 20l7.1-2.9z" fill="'+MOE.teal+'" opacity=".55"/></svg>');
+    const wave=enc('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0 60 C200 10 400 110 600 60 S1000 10 1200 60 V120 H0z" fill="'+MOE.sky+'" opacity=".55"/><path d="M0 80 C250 40 450 120 700 80 S1050 40 1200 85 V120 H0z" fill="'+MOE.blue+'"/></svg>');
+    const base='@page{size:A4 landscape;margin:0}*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}body{margin:0;font-family:"MoeFont","Helvetica Neue W23 for SKY","IBM Plex Sans Arabic",Tahoma,sans-serif;color:#1d2b33;background:#fff}'+
+      '.c{width:297mm;height:210mm;page-break-after:always;break-after:page;position:relative;overflow:hidden}.c:last-child{page-break-after:auto}'+
+      '.f{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:3.5mm;padding:14mm 26mm 12mm}'+
+      '.top{width:100%;display:flex;justify-content:space-between;align-items:flex-start;font-size:10pt;line-height:1.55;text-align:right;position:relative;z-index:2}.top .l{text-align:left}.top img{max-height:22mm;max-width:42mm}'+
+      'h1{font-size:34pt;margin:2mm 0 0;letter-spacing:0;position:relative;z-index:2}.sub{font-size:13.5pt;position:relative;z-index:2}'+
+      '.rt{font-size:15pt;margin-top:1mm;position:relative;z-index:2}.nm{font-size:27pt;font-weight:700;margin:0 0 1mm;padding:0 14mm 2mm;position:relative;z-index:2}'+
+      '.tx{font-size:15pt;line-height:1.9;max-width:205mm;position:relative;z-index:2}'+
+      '.sig{margin-top:auto;width:100%;display:flex;justify-content:space-around;gap:10mm;font-size:12pt;line-height:1.7;position:relative;z-index:2}.sig div{min-width:45mm;display:flex;flex-direction:column;justify-content:flex-end}.sig b{display:block}.sig i{display:block;font-style:normal;margin-top:5mm;border-top:.3mm dotted #888;padding-top:1mm;font-size:9.5pt;color:#666}'+
       '.tip{font-family:Tahoma,sans-serif;background:#FFF4D6;border:1px solid #E7C76B;padding:10px 14px;margin:12px;border-radius:8px}@media print{.tip{display:none}}';
-    const one=n=>'<section class="c"><div class="f"><div class="top"><div>المملكة العربية السعودية<br>وزارة التعليم<br>'+esc(s.admin||'')+'<br>'+esc(s.school||'')+'</div><div>'+(logo?'<img src="'+esc(logo)+'" alt="">':'')+'</div><div class="l">العام الدراسي '+esc(s.year||'')+'هـ<br>'+esc(o.date||'')+'</div></div>'+
-      '<h1>'+esc(o.title)+'</h1><div class="sub">'+esc(jobG('تتقدم إدارة '+(s.school||'المدرسة')+' بخالص الشكر والتقدير إلى'))+'</div><div class="nm">'+esc(n)+'</div><div class="tx">'+esc(jobG(o.text))+'</div>'+
-      '<div class="sig"><div><b>'+esc(jobG('مدير المدرسة'))+'</b>'+esc(principal()||'....................')+'</div><div><b>الختم</b>&nbsp;</div></div></div></section>';
-    return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'+esc(o.title)+'</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;700&display=swap"><style>'+(o.fc||'')+css+'</style></head><body>'+
-      '<div class="tip"><button type="button" onclick="window.print()" style="font:inherit;font-weight:700;background:#0E5C55;color:#fff;border:0;border-radius:8px;padding:10px 26px;cursor:pointer">🖨 اطبع الآن</button> اختر الاتجاه «أفقي» إن لم يُضبط تلقائيًا.</div>'+names.map(one).join('')+
+    const T={
+      teal:'.c{background:#fff}.c::before{content:"";position:absolute;top:0;bottom:0;right:0;width:24mm;background:repeating-linear-gradient(135deg,rgba(255,255,255,.12) 0 3mm,transparent 3mm 6mm),linear-gradient(180deg,'+MOE.navy+','+MOE.teal+')}'+
+        '.c::after{content:"";position:absolute;top:0;bottom:0;right:26mm;width:1.2mm;background:'+MOE.gold+'}.f{padding-right:42mm}h1{color:'+MOE.navy+'}.sub{color:'+MOE.teal+'}.nm{color:'+MOE.navy+';border-bottom:.7mm solid '+MOE.gold+'}.sig b{color:'+MOE.navy+'}',
+      green:'.c{background:#fff;border:1.2mm solid '+MOE.gray+'}.f{padding:16mm 30mm 26mm}.c::before{content:"";position:absolute;top:0;left:0;width:44mm;height:30mm;background:linear-gradient(135deg,'+MOE.green+' 0 50%,transparent 50%)}'+
+        '.c::after{content:"";position:absolute;bottom:0;right:0;width:90mm;height:24mm;background:linear-gradient(315deg,'+MOE.navy+' 0 50%,transparent 50%)}h1{color:'+MOE.green+'}.sub{color:'+MOE.navy+'}.nm{color:'+MOE.navy+';border-bottom:.7mm solid '+MOE.green+'}.sig b{color:'+MOE.green+'}',
+      blue:'.c{background:#fff;border-top:6mm solid '+MOE.navy+'}.c::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34mm;background:'+wave+' center/100% 100% no-repeat}'+
+        '.c::before{content:"";position:absolute;top:6mm;left:0;right:0;height:1.2mm;background:'+MOE.sky+'}.f{padding-bottom:36mm}h1{color:'+MOE.blue+'}.sub{color:'+MOE.navy+'}.nm{color:'+MOE.navy+';border-bottom:.7mm solid '+MOE.sky+'}.sig b{color:'+MOE.blue+'}',
+      pattern:'.c{background:'+star+' 0 0/14mm 14mm}.c::before{content:"";position:absolute;inset:12mm;background:#fff;border:1mm solid '+MOE.gold+';outline:.4mm solid '+MOE.gold+';outline-offset:-3mm}.f{inset:12mm;padding:12mm 22mm 10mm}'+
+        'h1{color:'+MOE.navy+'}.sub{color:#7a6a3a}.nm{color:'+MOE.navy+';border-bottom:.7mm solid '+MOE.gold+'}.sig b{color:'+MOE.navy+'}',
+      classic:'.c{padding:12mm}.c::before{content:"";position:absolute;inset:12mm;border:3mm solid #0E5C55;outline:1mm solid #C9A227;outline-offset:-6mm;border-radius:4mm}.f{inset:12mm;padding:14mm 22mm 12mm}'+
+        'h1{color:#0E5C55}.sub{color:#7A5C12}.nm{border-bottom:.6mm solid #C9A227}'
+    };
+    return base+(T[t]||T.teal);
+  }
+  function certHTML(o,names,logo){
+    const s=ST.settings,sigs=(o.sigs||[]).filter(x=>x.t||x.n);
+    const one=n=>'<section class="c"><div class="f"><div class="top"><div>المملكة العربية السعودية<br>وزارة التعليم<br>'+esc(s.admin||'')+'<br>'+esc(s.school||'')+'</div><div>'+(logo?'<img src="'+esc(logo)+'" alt="">':'')+'</div><div class="l">العام الدراسي '+esc(s.year||'')+'هـ<br>'+esc(rtlD(o.date||''))+'</div></div>'+
+      '<h1>'+esc(o.title)+'</h1><div class="sub">'+esc(jobG('تتقدم إدارة '+(s.school||'المدرسة')+' بخالص الشكر والتقدير إلى'))+'</div>'+
+      (n.t?'<div class="rt">'+esc(jobG(n.t))+'</div>':'')+'<div class="nm">'+esc(n.n)+'</div><div class="tx">'+esc(jobG(o.text))+'</div>'+
+      '<div class="sig">'+sigs.map(x=>'<div><b>'+esc(jobG(x.t||''))+'</b><span>'+(esc(x.n||'')||'&nbsp;')+'</span><i>التوقيع</i></div>').join('')+(o.stamp?'<div><b>الختم</b><span>&nbsp;</span><i style="border:0">&nbsp;</i></div>':'')+'</div></div></section>';
+    return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>'+esc(o.title)+'</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;700&display=swap"><style>'+(o.fc||'')+certCSS(o.tpl)+'</style></head><body>'+
+      '<div class="tip"><button type="button" onclick="window.print()" style="font:inherit;font-weight:700;background:#15445a;color:#fff;border:0;border-radius:8px;padding:10px 26px;cursor:pointer">🖨 اطبع الآن</button> اختر الاتجاه «أفقي»، وفعّل «رسومات الخلفية» من إعدادات الطباعة لتظهر الألوان.</div>'+names.map(one).join('')+
       '<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},700)})<\/script></body></html>';
   }
   function certsPage(){
     document.title='شهادات الشكر والتقدير';
     const staff=ST.staff.filter(s=>s&&s.name);
-    view.innerHTML='<div class="wrap panel-page">'+pageHead('شهادات الشكر والتقدير','اختر الأسماء واكتب سبب التكريم، وتُطبع شهادة لكل اسم في صفحة أفقية.')+
-      '<div class="lgrid"><form class="card" id="cForm"><div class="field"><label for="cTitle">عنوان الشهادة</label><input id="cTitle" class="cell-in" value="شهادة شكر وتقدير"></div>'+
-      '<div class="field"><label>من قائمة الموظفين</label>'+(staff.length?'<div class="row-actions"><button class="btn" type="button" id="cAll">تحديد الجميع</button></div><div class="pickl">'+staff.map(s=>'<label><input type="checkbox" value="'+esc(s.name)+'"><span>'+esc(s.name)+'</span><small>'+esc(jobG(s.job||''))+'</small></label>').join('')+'</div>':'<small>لا توجد قائمة موظفين بعد.</small>')+'</div>'+
-      '<div class="field"><label for="cNames">أسماء أخرى (اسم في كل سطر)، مثل الطلاب أو الضيوف</label><textarea id="cNames" class="cell-in" rows="3"></textarea></div>'+
+    const saved=lsGet('certopt',{tpl:'teal',sigs:[{t:'مدير المدرسة',n:principalName()}],stamp:true});
+    if(!saved.sigs||!saved.sigs.length)saved.sigs=[{t:'مدير المدرسة',n:principalName()}];saved.sigs.forEach(x=>{if(!x.n&&/^مدير[ة]? المدرسة$/.test(x.t||''))x.n=principalName();});
+    const sigRow=(x,i)=>'<div class="sigrow" data-i="'+i+'"><input class="cell-in" list="sigT" data-st value="'+esc(x.t||'')+'" placeholder="الصفة، مثل: الموجه الطلابي" aria-label="صفة الموقّع"><input class="cell-in" list="sigN" data-sn value="'+esc(x.n||'')+'" placeholder="الاسم" aria-label="اسم الموقّع"><button class="xdel" type="button" data-rmsig aria-label="حذف الموقّع">×</button></div>';
+    view.innerHTML='<div class="wrap panel-page">'+pageHead('شهادات الشكر والتقدير','اختر التصميم والأسماء، وحدّد صفة المكرَّم والموقّعين، فتُطبع شهادة لكل اسم في صفحة أفقية.')+
+      '<div class="card"><h2>تصميم الشهادة</h2><div class="tplpick" role="radiogroup" aria-label="تصميم الشهادة">'+CERT_TPL.map(([k,t,c])=>'<label class="tplopt"><input type="radio" name="tpl" value="'+k+'"'+(saved.tpl===k?' checked':'')+'><span><i class="sw">'+c.map(x=>'<em style="background:'+x+'"></em>').join('')+'</i><b>'+t+'</b></span></label>').join('')+'</div>'+
+      '<p class="status">ألوان التصاميم الأربعة الأولى من الهوية البصرية لوزارة التعليم. يظهر في الشهادة شعار مدرستك من «بيانات المدرسة».</p></div>'+
+      '<div class="lgrid"><form class="card" id="cForm"><h2>بيانات الشهادة</h2><div class="field"><label for="cTitle">عنوان الشهادة</label><input id="cTitle" class="cell-in" value="شهادة شكر وتقدير"></div>'+
+      '<div class="field"><label>المكرَّمون من قائمة الموظفين</label>'+(staff.length?'<div class="row-actions"><button class="btn" type="button" id="cAll">تحديد الجميع</button></div><div class="pickl">'+staff.map(s=>'<label><input type="checkbox" value="'+esc(s.name)+'" data-job="'+esc(s.job||'')+'"><span>'+esc(s.name)+'</span><small>'+esc(jobG(s.job||''))+'</small></label>').join('')+'</div>':'<small>لا توجد قائمة موظفين بعد.</small>')+'</div>'+
+      '<div class="grid2"><div class="field"><label for="cRT">صفة المكرَّم (تظهر قبل الاسم)</label><select id="cRT" class="cell-in"><option value="auto">من وظيفته في قائمة الموظفين</option>'+REC_TITLES.map(t=>'<option value="'+esc(t)+'">'+(t?esc(jobG(t)):'بدون صفة')+'</option>').join('')+'</select></div>'+
+      '<div class="field"><label for="cNames">أسماء أخرى، اسم في كل سطر (طلاب أو ضيوف)</label><textarea id="cNames" class="cell-in" rows="2"></textarea></div></div>'+
       '<div class="field"><label for="cText">نص التكريم</label><textarea id="cText" class="cell-in" rows="3">تقديرًا لجهوده المتميزة وإسهامه الفاعل في خدمة العملية التعليمية، سائلين الله له دوام التوفيق والسداد.</textarea></div>'+
       '<div class="field"><label for="cDate">التاريخ</label><input id="cDate" class="cell-in" value="'+esc(todayH())+'"></div>'+
+      '<div class="field"><label>الموقّعون على الشهادة</label><div id="sigs">'+saved.sigs.map(sigRow).join('')+'</div><div class="row-actions"><button class="btn" type="button" id="addSig">+ إضافة موقّع</button><label class="tgl"><input type="checkbox" id="cStamp"'+(saved.stamp?' checked':'')+'><span>خانة الختم</span></label></div>'+
+      '<datalist id="sigT">'+SIG_TITLES.map(t=>'<option value="'+esc(jobG(t))+'">').join('')+'</datalist><datalist id="sigN">'+staff.map(s=>'<option value="'+esc(s.name)+'">'+esc(jobG(s.job||''))+'</option>').join('')+'</datalist></div>'+
       '<div class="row-actions"><button class="btn primary" type="button" id="cPrint">🖨 طباعة الشهادات</button><span class="status" id="cStat"></span></div></form>'+
       '<div class="card"><h2>معاينة</h2><div class="certprev"><iframe id="cPrev" title="معاينة الشهادة" tabindex="-1"></iframe></div></div></div></div>';
     gz(view);
     const f=document.getElementById('cForm');
-    const names=()=>[...view.querySelectorAll('.pickl input:checked')].map(x=>x.value).concat(document.getElementById('cNames').value.split('\n').map(x=>x.trim()).filter(Boolean));
-    const opts=()=>({title:document.getElementById('cTitle').value.trim()||'شهادة شكر وتقدير',text:document.getElementById('cText').value.trim(),date:document.getElementById('cDate').value.trim()});
+    const rt=()=>document.getElementById('cRT').value;
+    const names=()=>[...view.querySelectorAll('.pickl input:checked')].map(x=>({n:x.value,t:rt()==='auto'?(x.dataset.job||''):rt()})).concat(document.getElementById('cNames').value.split('\n').map(x=>x.trim()).filter(Boolean).map(n=>({n,t:rt()==='auto'?'':rt()})));
+    const sigs=()=>[...view.querySelectorAll('.sigrow')].map(r=>({t:r.querySelector('[data-st]').value.trim(),n:r.querySelector('[data-sn]').value.trim()}));
+    const opts=()=>({title:document.getElementById('cTitle').value.trim()||'شهادة شكر وتقدير',text:document.getElementById('cText').value.trim(),date:document.getElementById('cDate').value.trim(),tpl:(view.querySelector('[name=tpl]:checked')||{}).value||'teal',sigs:sigs(),stamp:document.getElementById('cStamp').checked});
     let lg='';logoData().then(x=>{lg=x;upd();});
-    const upd=()=>{const n=names();document.getElementById('cStat').textContent=n.length?ar(n.length)+' شهادة':'اختر اسمًا واحدًا على الأقل';
-      document.getElementById('cPrev').srcdoc=certHTML(opts(),[n[0]||'الاسم'],lg).replace(/<script>[\s\S]*?<\/script>/,'').replace(/<div class="tip">[\s\S]*?<\/div>/,'');};
-    f.addEventListener('input',()=>{dirtyForm=true;upd();});f.addEventListener('change',upd);
-    const box=view.querySelector('.certprev'),fit=()=>{const fr=document.getElementById('cPrev');if(box&&fr)fr.style.transform='scale('+(box.clientWidth/1123)+')';};fit();try{new ResizeObserver(fit).observe(box);}catch(e){}
+    const box=view.querySelector('.certprev'),fit=()=>{const fr=document.getElementById('cPrev');if(box&&fr)fr.style.transform='scale('+(box.clientWidth/1123)+')';};
+    const upd=()=>{const n=names(),o=opts();lsSet('certopt',{tpl:o.tpl,sigs:o.sigs,stamp:o.stamp});
+      document.getElementById('cStat').textContent=n.length?ar(n.length)+' شهادة':'اختر اسمًا واحدًا على الأقل';
+      document.getElementById('cPrev').srcdoc=certHTML(o,[n[0]||{n:'الاسم',t:rt()==='auto'?'':rt()}],lg).replace(/<script>[\s\S]*?<\/script>/,'').replace(/<div class="tip">[\s\S]*?<\/div>/,'');};
+    view.addEventListener('input',e=>{if(e.target.closest('#cForm')){dirtyForm=true;upd();}});
+    view.addEventListener('change',e=>{if(e.target.closest('#cForm')||e.target.name==='tpl')upd();});
+    document.getElementById('addSig').onclick=()=>{const d=document.createElement('div');d.innerHTML=sigRow({t:'',n:''},0);document.getElementById('sigs').appendChild(d.firstChild);gz(view);upd();};
+    document.getElementById('sigs').addEventListener('click',e=>{const b=e.target.closest('[data-rmsig]');if(b){b.closest('.sigrow').remove();upd();}});
+    fit();try{new ResizeObserver(fit).observe(box);}catch(e){}
     const all=document.getElementById('cAll');if(all)all.onclick=()=>{view.querySelectorAll('.pickl input').forEach(x=>x.checked=true);upd();};
     upd();
     document.getElementById('cPrint').onclick=async()=>{const n=names();if(!n.length){toast('اختر اسمًا واحدًا على الأقل');return;}const o=opts();o.fc=await fontCssData();await offerFile(o.title+' ('+ar(n.length)+')',certHTML(o,n,lg),'html');};
@@ -3331,7 +3406,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
   const stuDL=()=>'<datalist id="stuDL">'+students().map(s=>'<option value="'+esc(s.name)+'">'+esc(s.cls||'')+'</option>').join('')+'</datalist>';
   const isoToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
   const isoDate=iso=>{const [y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d,12);};
-  const hOf=iso=>hijriOf(isoDate(iso))+'هـ';
+  const hOf=iso=>rtlD(hijriOf(isoDate(iso)))+'هـ';
 
   /* Hijri (Umm al-Qura) date field: day / month / year selects backed by a hidden ISO value */
   function hDate(id,iso,optional){
