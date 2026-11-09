@@ -296,6 +296,24 @@ mark{background:var(--hi);color:inherit;border-radius:3px;padding:0 2px}
 .staff-t th{white-space:nowrap}
 .staff-t input[type=tel]{text-align:right}
 .comm.focus{outline:3px solid var(--brand);outline-offset:2px}
+.offpanel{display:grid;gap:14px}
+.offhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.offhead h2{margin:0 0 4px}
+.otiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.otile{border:1px solid var(--rule);border-radius:12px;padding:12px;display:grid;gap:8px;align-content:start;background:var(--desk)}
+.otile.have{background:var(--auto-bg);border-color:var(--brand)}
+.otile .oh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.otile .oh b{font-family:var(--display);font-size:15px;line-height:1.5}
+.otile .om{font-size:13px;color:var(--ink-soft);line-height:1.6}
+.otile .btn{justify-self:start;font-size:13px;padding:6px 12px}
+.tag{flex:none;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--sheet);border:1px solid var(--rule);color:var(--ink-soft);white-space:nowrap}
+.grp-h{display:flex;align-items:center;gap:8px;font-size:18px;margin:26px 0 12px}
+.comm.off{border-top:4px solid var(--brand)}
+.comm .badge{flex:none;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--brand);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.chip{border:1px dashed var(--brand);background:var(--sheet);color:var(--brand);border-radius:999px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
+.chip:hover{background:var(--auto-bg)}
+.addcard{margin-top:22px;display:grid;gap:8px}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--sheet);padding:8px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
 .toast.on{opacity:1}
@@ -2347,21 +2365,50 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
   }
 
   /* ---------- committees ---------- */
+  const COMM_OFFICIAL={"admin": {"name": "اللجنة الإدارية", "kind": "لجنة", "members": [["مدير المدرسة", "رئيس اللجنة"], ["وكيل الشؤون التعليمية", "عضوًا"], ["وكيل الشؤون المدرسية", "عضوًا"], ["وكيل شؤون الطلاب", "عضوًا"], ["الموجه الطلابي", "عضوًا"], ["رائد النشاط", "عضوًا"], ["معلم", "عضوًا"], ["معلم", "عضوًا"], ["معلم", "عضوًا"], ["المساعد الإداري", "مقررًا للجنة"]], "order": 1}, "guidance": {"name": "لجنة التوجيه والإرشاد", "kind": "لجنة", "members": [["وكيل شؤون الطلاب", "رئيس اللجنة"], ["وكيل الشؤون التعليمية", "عضوًا"], ["الموجه الطلابي", "مقررًا للجنة"], ["معلم", "عضوًا"], ["معلم", "عضوًا"], ["معلم", "عضوًا"]], "order": 2}, "achievement": {"name": "لجنة التحصيل الدراسي", "kind": "لجنة", "members": [["مدير المدرسة", "رئيس اللجنة"], ["وكيل الشؤون التعليمية", "عضوًا"], ["وكيل شؤون الطلاب", "عضوًا"], ["الموجه الطلابي", "مقررًا للجنة"], ["رائد النشاط", "عضوًا"], ["معلم (خبير أو متقدم)", "عضوًا"], ["معلم (خبير أو متقدم)", "عضوًا"], ["معلم (خبير أو متقدم)", "عضوًا"]], "order": 3}, "excellence": {"name": "لجنة التميز", "kind": "لجنة", "members": [["مدير المدرسة", "رئيس اللجنة"], ["وكيل الشؤون التعليمية", "عضوًا"], ["وكيل الشؤون المدرسية", "عضوًا"], ["وكيل شؤون الطلاب", "عضوًا"], ["الموجه الطلابي", "عضوًا"], ["رائد النشاط", "مقررًا للجنة"], ["معلم (خبير أو متقدم)", "عضوًا"], ["معلم (خبير أو متقدم)", "عضوًا"], ["معلم (خبير أو متقدم)", "عضوًا"]], "order": 4}, "fund": {"name": "فريق الصندوق المدرسي", "kind": "فريق مؤقت", "members": [["وكيل الشؤون المدرسية", "رئيس الفريق"], ["الموجه الطلابي", "عضوًا"], ["رائد النشاط", "عضوًا"], ["معلم ترشحه اللجنة الإدارية", "عضوًا"], ["المساعد الإداري", "مقررًا للفريق"]], "order": 5}, "safety": {"name": "فريق الأمن والسلامة المدرسية", "kind": "فريق مؤقت", "members": [["وكيل الشؤون المدرسية", "رئيس الفريق"], ["الموجه الطلابي", "عضوًا"], ["الموجه الصحي", "عضوًا"], ["معلم ترشحه اللجنة الإدارية", "عضوًا"], ["معلم ترشحه اللجنة الإدارية", "مقررًا للفريق"]], "order": 6}, "special": {"name": "فريق التربية الخاصة", "kind": "فريق مؤقت", "note": "في المدارس التي فيها برامج تربية خاصة", "members": [["وكيل شؤون الطلاب", "رئيس الفريق"], ["الموجه الطلابي", "عضوًا"], ["الموجه الصحي", "عضوًا"], ["معلم ترشحه اللجنة الإدارية", "عضوًا"], ["معلم ترشحه اللجنة الإدارية", "عضوًا"], ["معلم التربية الخاصة", "مقررًا للفريق"]], "order": 7}};
+  const COMM_OTHER={"behavior": {"name": "لجنة تعزيز السلوك الإيجابي", "order": 14, "members": [["مدير المدرسة", "رئيسًا"], ["وكيل شؤون الطلاب", "عضوًا"], ["الموجه الطلابي", "عضوًا"], ["رائد النشاط", "عضوًا"], ["معلم متميز", "عضوًا"], ["معلم متميز", "عضوًا"], ["أمين مصادر التعلم", "عضوًا"]]}, "budget": {"name": "لجنة الميزانية التشغيلية", "order": 12, "members": [["مدير المدرسة", "رئيسًا"], ["وكيل الشؤون التعليمية", "عضوًا"], ["وكيل الشؤون المدرسية", "عضوًا"], ["وكيل الشؤون الطلابية", "عضوًا"], ["الموجه الطلابي", "عضوًا"], ["رائد النشاط", "عضوًا"], ["معلم", "عضوًا"], ["مساعد إداري", "عضوًا"]]}, "canteen": {"name": "اللجنة الإشرافية على المقصف", "order": 10, "members": [["وكيل الشؤون المدرسية", "رئيس اللجنة"], ["الموجه الصحي", "عضوًا"], ["معلم", "عضوًا"], ["المساعد الإداري", "عضوًا"]]}, "discipline": {"name": "لجنة الانضباط المدرسي", "order": 13, "members": [["مدير المدرسة", "رئيسًا"], ["وكيل شؤون الطلاب", "عضوًا"], ["الموجه الطلابي", "عضوًا"], ["رائد النشاط", "عضوًا"], ["معلم", "عضوًا"], ["مساعد إداري", "عضوًا"]]}, "health": {"name": "فريق الصحة المدرسية", "order": 16, "members": [["مدير المدرسة", "رئيس الفريق"], ["وكيل المدرسة للشؤون المدرسية", "نائب الفريق"], ["وكيل المدرسة للشؤون الطلابية", "نائب الفريق"], ["مساعد إداري او معلم", "موجه صحي (منسق الفريق)"], ["الموجه الطلابي", "عضو"], ["معلم متميز", "عضو"]]}, "parents": {"name": "مجلس الآباء", "order": 11, "members": [["مدير المدرسة", "رئيسًا"], ["وكيل مكلف", "نائبًا للرئيس"], ["الموجه الطلابي", "المقرر"], ["معلم", "عضو"], ["معلم", "عضو"], ["معلم", "عضو"]]}, "planning": {"name": "فريق الخطة التشغيلية", "order": 9, "members": [["مدير المدرسة", "رئيسًا"], ["وكيل الشؤون التعليمية", "عضوًا"], ["وكيل الشؤون المدرسية", "عضوًا"], ["وكيل الشؤون الطلابية", "عضوًا"], ["معلم متميز", "عضوًا"], ["معلم متميز", "عضوًا"], ["معلم متميز", "عضوًا"], ["مساعد إداري", "عضوًا"]]}, "remedial": {"name": "لجنة علاج المستوى التحصيلي", "order": 15, "members": [["مدير المدرسة", "رئيسًا"], ["وكيل المدرسة", "عضوًا"], ["رائد النشاط", "عضوًا"], ["معلم", "عضوًا"], ["معلم", "عضوًا"]]}, "selfeval": {"name": "فريق التقويم الذاتي", "order": 8, "members": [["مدير المدرسة", "رئيسًا"], ["وكيل المدرسة", "عضوًا"], ["معلم متميز", "عضوًا"], ["معلم متميز", "عضوًا"], ["معلم متميز", "عضوًا"], ["مساعد إداري", "عضوًا"]]}};
   function committeesSorted(){return Object.entries(ST.committees).sort((a,b)=>(a[1].order||0)-(b[1].order||0));}
+  const nzj=v=>String(v||'').replace(/[ًٌٍَُِّْـ]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/\s+/g,' ').trim();
+  function commBody(t,order){return {name:t.name,order,members:t.members.map(([job,role])=>({name:'',job,role})),at:new Date().toISOString()};}
+  async function addTemplate(id,t,order){const body=commBody(t,order);await ST.db.doc('committees/'+id).set(body);ST.committees[id]=body;}
   function committees(){
     document.title='اللجان والفرق';
     const ro=!ST.db||!ST.canWrite, list=committeesSorted();
+    const offIds=Object.keys(COMM_OFFICIAL);
+    const official=list.filter(([id])=>COMM_OFFICIAL[id]).sort((a,b)=>offIds.indexOf(a[0])-offIds.indexOf(b[0]));
+    const rest=list.filter(([id])=>!COMM_OFFICIAL[id]);
+    const missing=offIds.filter(id=>!ST.committees[id]);
+    const tiles=offIds.map(id=>{const t=COMM_OFFICIAL[id],have=!!ST.committees[id],chair=t.members[0][0];
+      return '<div class="otile'+(have?' have':'')+'"><div class="oh"><b>'+esc(jobG(t.name))+'</b><span class="tag">'+esc(t.kind)+'</span></div>'+
+        '<span class="om">'+uiG('الرئيس: ')+esc(jobG(chair))+' · '+ar(t.members.length)+' أعضاء'+(t.note?'<br><small>'+esc(t.note)+'</small>':'')+'</span>'+
+        (have?'<a class="btn ghost" href="#comm-'+id+'" data-go="'+id+'">✓ مضافة · عرض</a>':(ro?'<span class="om">غير مضافة</span>':'<button class="btn primary" type="button" data-addoff="'+id+'">+ إضافة بالتشكيل المعتمد</button>'))+'</div>';}).join('');
+    const sugg=Object.entries(COMM_OTHER).filter(([id])=>!ST.committees[id]);
     view.innerHTML='<div class="wrap panel-page"><header><h1>اللجان وفرق العمل</h1><p>سجّل أسماء الأعضاء مرة واحدة، وستظهر تلقائيًا في جداول قرارات التشكيل والتكليف في السجلات (باللون المميّز) وفي ملفات الطباعة. يُطابَق كل اسم مع وظيفته في الجدول.</p>'+
       (ro?'<p class="status">'+(ST.db?'ليست لديك صلاحية التعديل، يمكنك الاطلاع فقط.':'الحفظ المشترك غير متاح في هذا العرض.')+'</p>':'')+'</header>'+
-      (list.length?'':'<div class="empty">'+(ST.ready?'لا توجد لجان بعد. أضف أول لجنة من الزر أدناه.':'جارٍ تحميل اللجان…')+'</div>')+
-      staffDatalist()+'<div class="comm-list">'+list.map(([id,c])=>commCard(id,c,ro)).join('')+'</div>'+
-      (ro?'':'<div class="card"><h2>إضافة لجنة أو فريق</h2><form class="row-actions" id="addComm"><input class="cell-in" style="flex:1;min-width:200px" id="newComm" placeholder="اسم اللجنة، مثل: لجنة الاختبارات" aria-label="اسم اللجنة الجديدة"><button class="btn primary" type="submit">إضافة</button></form></div>')+'</div>';
+      '<section class="card offpanel"><div class="offhead"><div><h2>اللجان والفرق المعتمدة</h2><p class="status">حسب الدليل التنظيمي لمدارس التعليم العام (وزارة التعليم): أربع لجان دائمة وثلاثة فرق عمل مؤقتة. التشكيل جاهز بالوظائف والصفات، وعليك اختيار الأسماء فقط.</p></div>'+
+      (!ro&&missing.length>1?'<button class="btn primary" type="button" id="addAllOff">+ إضافة كل المعتمدة ('+ar(missing.length)+')</button>':'')+'</div><div class="otiles">'+tiles+'</div></section>'+
+      (official.length?'<h2 class="grp-h">اللجان والفرق المعتمدة <span class="tag">'+ar(official.length)+'</span></h2>'+staffDatalist()+'<div class="comm-list">'+official.map(([id,c])=>commCard(id,c,ro,true)).join('')+'</div>':staffDatalist())+
+      (rest.length?'<h2 class="grp-h">لجان وفرق أخرى <span class="tag">'+ar(rest.length)+'</span></h2><div class="comm-list">'+rest.map(([id,c])=>commCard(id,c,ro,false)).join('')+'</div>':'')+
+      (!list.length&&!ST.ready?'<div class="empty">جارٍ تحميل اللجان…</div>':'')+
+      (ro?'':'<div class="card addcard"><h2>إضافة لجنة أو فريق</h2>'+
+        (sugg.length?'<p class="status">لجان وفرق مرتبطة بصفحات السجلات (تُملأ أسماؤها في الجداول تلقائيًا):</p><div class="chips">'+sugg.map(([id,t])=>'<button class="chip" type="button" data-addoth="'+id+'">+ '+esc(jobG(t.name))+'</button>').join('')+'</div>':'')+
+        '<p class="status">أو أضف لجنة جديدة باسمها:</p><form class="row-actions" id="addComm"><input class="cell-in" style="flex:1;min-width:200px" id="newComm" placeholder="اسم اللجنة، مثل: لجنة الاختبارات" aria-label="اسم اللجنة الجديدة"><button class="btn primary" type="submit">إضافة</button></form></div>')+'</div>';
     if(girls())view.querySelectorAll('h1,h2,p,th,button,.empty').forEach(el=>el.childNodes.forEach(nd=>{if(nd.nodeType===3)nd.nodeValue=uiG(nd.nodeValue);}));
     view.querySelectorAll('.comm').forEach(bindComm);
+    const nextOrder=()=>{const l=committeesSorted();return l.length?Math.max(...l.map(([,c])=>c.order||0))+1:1;};
+    view.querySelectorAll('[data-go]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const el=document.getElementById('comm-'+a.dataset.go);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('focus');setTimeout(()=>el.classList.remove('focus'),2500);}}));
+    view.querySelectorAll('[data-addoff]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.addoff;b.disabled=true;
+      try{await addTemplate(id,COMM_OFFICIAL[id],COMM_OFFICIAL[id].order);focusComm=id;committees();toast('أُضيفت '+COMM_OFFICIAL[id].name);}catch(err){b.disabled=false;toast('تعذّرت الإضافة');}}));
+    view.querySelectorAll('[data-addoth]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.addoth;b.disabled=true;
+      try{await addTemplate(id,COMM_OTHER[id],Math.max(nextOrder(),COMM_OTHER[id].order||0));focusComm=id;committees();toast('أُضيفت '+COMM_OTHER[id].name);}catch(err){b.disabled=false;toast('تعذّرت الإضافة');}}));
+    const all=document.getElementById('addAllOff');
+    if(all)all.addEventListener('click',async()=>{all.disabled=true;
+      try{for(const id of offIds){if(!ST.committees[id])await addTemplate(id,COMM_OFFICIAL[id],COMM_OFFICIAL[id].order);}committees();toast('أُضيفت كل اللجان والفرق المعتمدة');}catch(err){all.disabled=false;toast('تعذّرت الإضافة');}});
     const add=document.getElementById('addComm');
     if(add)add.addEventListener('submit',async e=>{e.preventDefault();const name=document.getElementById('newComm').value.trim();if(!name)return;
-      const id='c'+Date.now().toString(36);const order=list.length?Math.max(...list.map(([,c])=>c.order||0))+1:1;
-      try{await ST.db.doc('committees/'+id).set({name,order,members:[{name:'',job:'',role:'رئيس اللجنة'}]});ST.committees[id]={name,order,members:[{name:'',job:'',role:'رئيس اللجنة'}]};focusComm=id;committees();toast('أُضيفت اللجنة');}
+      const id='c'+Date.now().toString(36);const order=nextOrder()+100;
+      const body={name,order,members:[{name:'',job:'',role:'رئيس اللجنة'},{name:'',job:'',role:'عضوًا'},{name:'',job:'',role:'عضوًا'}]};
+      try{await ST.db.doc('committees/'+id).set(body);ST.committees[id]=body;focusComm=id;committees();toast('أُضيفت اللجنة');}
       catch(err){toast('تعذّرت الإضافة');}});
     if(focusComm){const el=document.getElementById('comm-'+focusComm);if(el){el.classList.add('focus');el.scrollIntoView({block:'start'});setTimeout(()=>el.classList.remove('focus'),2500);}focusComm='';}
     else window.scrollTo(0,0);
@@ -2370,11 +2417,11 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     const d=ro?' disabled':'';
     return '<tr><td><input class="cell-in" data-k="name" list="staffNames" value="'+esc(m.name||'')+'" placeholder="اختر أو اكتب الاسم" aria-label="اسم العضو"'+d+'></td><td><input class="cell-in" data-k="job" value="'+esc(jobG(m.job))+'" placeholder="الوظيفة" aria-label="الوظيفة"'+d+'></td><td><input class="cell-in" data-k="role" value="'+esc(jobG(m.role))+'" placeholder="الصفة" aria-label="صفته في اللجنة"'+d+'></td><td>'+(ro?'':'<button class="del" type="button" aria-label="حذف العضو">×</button>')+'</td></tr>';
   }
-  function commCard(id,c,ro){
+  function commCard(id,c,ro,off){
     const ms=Array.isArray(c.members)?c.members:[];
-    return '<section class="card comm" id="comm-'+esc(id)+'" data-id="'+esc(id)+'"><div class="top"><input class="cname" value="'+esc(jobG(c.name))+'" aria-label="اسم اللجنة"'+(ro?' disabled':'')+'><span class="count num">'+ar(ms.filter(m=>m&&m.name).length)+' من '+ar(ms.length)+uiG(' مسجّلون')+'</span></div>'+
+    return '<section class="card comm'+(off?' off':'')+'" id="comm-'+esc(id)+'" data-id="'+esc(id)+'"><div class="top">'+(off?'<span class="badge">معتمدة</span>':'')+'<input class="cname" value="'+esc(jobG(c.name))+'" aria-label="اسم اللجنة"'+(ro?' disabled':'')+'><span class="count num">'+ar(ms.filter(m=>m&&m.name).length)+' من '+ar(ms.length)+uiG(' مسجّلون')+'</span></div>'+
       '<div class="mwrap"><table class="mtable"><thead><tr><th style="width:38%">الاسم</th><th style="width:34%">الوظيفة</th><th>الصفة</th><th></th></tr></thead><tbody>'+ms.map(m=>memberRow(m||{},ro)).join('')+'</tbody></table></div>'+
-      (ro?'':'<div class="row-actions"><button class="btn add" type="button">+ عضو</button><button class="btn primary save" type="button">حفظ</button><button class="btn danger clrn" type="button">تفريغ الأسماء</button><button class="btn danger delc" type="button">حذف اللجنة</button><span class="status st"></span></div>')+'</section>';
+      (ro?'':'<div class="row-actions"><button class="btn add" type="button">+ عضو</button><button class="btn primary save" type="button">حفظ</button>'+(off?'<button class="btn reset" type="button" title="إعادة الوظائف والصفات كما في الدليل التنظيمي، مع إبقاء الأسماء المطابقة">التشكيل المعتمد</button>':'')+'<button class="btn danger clrn" type="button">تفريغ الأسماء</button><button class="btn danger delc" type="button">حذف اللجنة</button><span class="status st"></span></div>')+'</section>';
   }
   function bindComm(card){
     const id=card.dataset.id, st=card.querySelector('.st'), tb=card.querySelector('tbody');
@@ -2392,6 +2439,15 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
       catch(err){st.className='status st err';st.textContent='تعذّر الحفظ';}
       btn.disabled=false;
     };
+    const rs=card.querySelector('.reset');
+    if(rs){let armedR=false;rs.onclick=async()=>{
+      if(!armedR){armedR=true;rs.classList.add('armed');rs.textContent='اضغط للتأكيد';setTimeout(()=>{armedR=false;rs.classList.remove('armed');rs.textContent='التشكيل المعتمد';},4000);return;}
+      const t=COMM_OFFICIAL[id];if(!t)return;
+      const old=((ST.committees[id]||{}).members||[]).filter(m=>m&&m.name);const used=new Set();
+      const members=t.members.map(([job,role])=>{const i=old.findIndex((m,k)=>!used.has(k)&&nzj(m.job)===nzj(job));if(i>=0){used.add(i);return {name:old[i].name,job,role};}return {name:'',job,role};});
+      const body=Object.assign({},ST.committees[id]||{},{name:t.name,members,at:new Date().toISOString()});
+      try{await ST.db.doc('committees/'+id).set(body);ST.committees[id]=body;dirtyForm=false;focusComm=id;committees();toast('طُبّق التشكيل المعتمد');}catch(err){st.className='status st err';st.textContent='تعذّر التطبيق';}
+    };}
     const cn=card.querySelector('.clrn');let armedC=false;
     cn.onclick=async()=>{
       if(!armedC){armedC=true;cn.classList.add('armed');cn.textContent='اضغط للتأكيد';setTimeout(()=>{armedC=false;cn.classList.remove('armed');cn.textContent='تفريغ الأسماء';},4000);return;}
