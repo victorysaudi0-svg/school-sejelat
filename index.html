@@ -3713,23 +3713,49 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     follow:{t:'سجل متابعة الطلاب',cols:['اسم الطالب','الفصل','المشاركة','الواجبات','السلوك','ملاحظات'],meta:[['teacher','اسم المعلم'],['subject','المادة'],['term','الفصل الدراسي']],rows:8},
     parents:{t:'سجل التواصل مع أولياء الأمور',cols:['التاريخ','اسم الطالب','ولي الأمر','وسيلة التواصل','سبب التواصل','الإجراء / النتيجة'],meta:[['teacher','اسم المعلم'],['subject','المادة']],rows:6}
   };
+  /* what a teacher has been assigned: classes (with their students) and subjects, from «الجدول المدرسي» and «إسناد الفصول» */
+  function teacherInfo(n){
+    const t=ttGet(),a=assignAll(),cls=new Set(a.by[n]||[]),subs=new Set(),pairs=[];
+    Object.keys(t.asg).forEach(c=>Object.entries(t.asg[c]||{}).forEach(([sb,x])=>{if(x===n){cls.add(c);if(sb!==S_ACT)subs.add(sb);pairs.push([c,sb]);}}));
+    const C=[...cls].sort((x,y)=>x.localeCompare(y,'ar',{numeric:true}));
+    const slots=[];for(let d=0;d<5;d++)for(let k=0;k<9;k++)Object.keys(t.grid).forEach(c=>{const sb=(t.grid[c]||{})[d+'-'+k];if(sb&&(t.asg[c]||{})[sb]===n)slots.push([DAYS5[d],PER_ORD[k],c,sb]);});
+    return {cls:C,subs:[...subs],pairs,slots,stu:students().filter(x=>C.includes(x.cls)).sort((x,y)=>C.indexOf(x.cls)-C.indexOf(y.cls)||x.name.localeCompare(y.name,'ar'))};
+  }
   function teacherPage(){
     document.title='سجلات المعلم';
     let k='weekly';try{k=localStorage.getItem('sr-tsel')||'weekly';}catch(e){}if(!TREC[k])k='weekly';const def=TREC[k];
     const d=xGet('teacher_'+k,null)||{meta:{},rows:Array.from({length:def.rows},()=>def.cols.map(()=>''))};
     const staff=ST.staff.filter(s=>s&&s.name);
+    if(!d.meta.teacher&&lsGet('perfme',''))d.meta.teacher=lsGet('perfme','');
+    const TI=d.meta.teacher?teacherInfo(d.meta.teacher):null;
+    if(TI&&!d.meta.subject&&TI.subs.length)d.meta.subject=TI.subs.join('، ');
+    const blank=d.rows.every(r=>r.every(x=>!String(x||'').trim()));
+    const autoRows=I=>k==='weekly'?(I.slots.length?I.slots:I.pairs.filter(p=>p[1]!==S_ACT).map(([c,sb])=>['','',c,sb])).map(r=>r.concat(['','','']).slice(0,7)):k==='follow'?I.stu.map(x=>[x.name,x.cls,'','','','']):null;
+    if(TI&&blank){const ar0=autoRows(TI);if(ar0&&ar0.length)d.rows=ar0;}
+    const stuCol=def.cols.indexOf('اسم الطالب');
     view.innerHTML='<div class="wrap panel-page">'+pageHead('سجلات المعلم','سجلات شخصية للمعلم تُحفظ وتُطبع بترويسة المدرسة.')+
       '<div class="tabs2" role="tablist">'+Object.entries(TREC).map(([kk,v])=>'<button type="button" role="tab" data-k="'+kk+'" aria-selected="'+(kk===k)+'">'+v.t+'</button>').join('')+'</div>'+
       '<div class="card"><div class="grid3">'+def.meta.map(([mk,ml])=>'<div class="field"><label for="tm-'+mk+'">'+ml+'</label><input id="tm-'+mk+'" class="cell-in" data-m="'+mk+'" value="'+esc(d.meta[mk]||'')+'"'+(mk==='teacher'?' list="tStaff"':'')+'></div>').join('')+'</div>'+
       '<datalist id="tStaff">'+staff.map(s=>'<option value="'+esc(s.name)+'">').join('')+'</datalist>'+
-      '<div class="tw tedit"><table><thead><tr><th>م</th>'+def.cols.map(c=>'<th>'+c+'</th>').join('')+'<th></th></tr></thead><tbody>'+d.rows.map((r,i)=>'<tr><td class="num">'+ar(i+1)+'</td>'+def.cols.map((c,j)=>'<td><input class="cell-in" data-r="'+i+'" data-c="'+j+'" value="'+esc(r[j]||'')+'" aria-label="'+esc(c)+'"></td>').join('')+'<td><button class="xdel" type="button" data-rr="'+i+'" aria-label="حذف الصف">×</button></td></tr>').join('')+'</tbody></table></div>'+
-      '<div class="row-actions"><button class="btn" type="button" id="tAdd">+ صف</button><button class="btn primary" type="button" id="tSave">حفظ</button><button class="btn" type="button" id="tPrint">⬇ تنزيل</button><button class="btn" type="button" id="tPdf">⬇ PDF</button><span class="status" id="tStat"></span></div></div></div>';
+      '<datalist id="tStu">'+(TI?TI.stu:students()).map(x=>'<option value="'+esc(x.name)+'">'+esc(x.cls||'')+'</option>').join('')+'</datalist>'+
+      (TI?'<p class="status tinfo">'+(TI.cls.length?esc(jobG('الفصول المسندة: '))+TI.cls.map(esc).join('، ')+' · '+uiG(nStu(TI.stu.length))+(TI.subs.length?' · المواد: '+TI.subs.map(esc).join('، '):''):esc(jobG('لم تُسند لهذا المعلم فصول بعد.'))+' <a href="#timetable">الجدول المدرسي</a>')+'</p>':'')+
+      '<div class="tw tedit"><table><thead><tr><th>م</th>'+def.cols.map(c=>'<th>'+c+'</th>').join('')+'<th></th></tr></thead><tbody>'+d.rows.map((r,i)=>'<tr><td class="num">'+ar(i+1)+'</td>'+def.cols.map((c,j)=>'<td><input class="cell-in" data-r="'+i+'" data-c="'+j+'" value="'+esc(r[j]||'')+'" aria-label="'+esc(c)+'"'+(j===stuCol?' list="tStu"':'')+'></td>').join('')+'<td><button class="xdel" type="button" data-rr="'+i+'" aria-label="حذف الصف">×</button></td></tr>').join('')+'</tbody></table></div>'+
+      '<div class="row-actions"><button class="btn" type="button" id="tAdd">+ صف</button>'+(k!=='parents'?'<button class="btn" type="button" id="tFill">↻ '+esc(jobG(k==='weekly'?'تعبئة الحصص من الجدول':'تعبئة الطلاب من الفصول المسندة'))+'</button>':'')+'<button class="btn primary" type="button" id="tSave">حفظ</button><button class="btn" type="button" id="tPrint">⬇ تنزيل</button><button class="btn" type="button" id="tPdf">⬇ PDF</button><span class="status" id="tStat"></span></div></div></div>';
     gz(view);
     view.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{try{localStorage.setItem('sr-tsel',b.dataset.k);}catch(e){}dirtyForm=false;teacherPage();});
     const collect=()=>{const meta={};view.querySelectorAll('[data-m]').forEach(x=>meta[x.dataset.m]=x.value.trim());const rows=d.rows.map((r,i)=>def.cols.map((c,j)=>{const el=view.querySelector('[data-r="'+i+'"][data-c="'+j+'"]');return el?el.value.trim():'';}));return {meta,rows};};
     const st=document.getElementById('tStat');
     const save=async()=>{const v=collect();Object.assign(d,v);await xSet('teacher_'+k,d);dirtyForm=false;st.className='status ok';st.textContent='حُفظ';};
     view.querySelector('.card').addEventListener('input',()=>{dirtyForm=true;st.textContent='';});
+    const tIn=view.querySelector('#tm-teacher');
+    if(tIn)tIn.addEventListener('change',async()=>{const n=tIn.value.trim();if(!n||n===(d.meta.teacher||''))return;const v=collect();Object.assign(d,v);d.meta.teacher=n;
+      if(staff.some(x=>x.name===n))lsSet('perfme',n);const I=teacherInfo(n);d.meta.subject=I.subs.join('، ')||d.meta.subject||'';
+      const r=autoRows(I);if(r&&r.length&&d.rows.every(x=>x.every(y=>!String(y||'').trim())))d.rows=r;
+      await xSet('teacher_'+k,d);dirtyForm=false;setTimeout(teacherPage,0);});
+    const fb=document.getElementById('tFill');if(fb)fb.onclick=async()=>{const v=collect();Object.assign(d,v);const n=d.meta.teacher;if(!n){toast(jobG('اختر اسم المعلم أولًا'));return;}const I=teacherInfo(n),r=autoRows(I);
+      if(!r||!r.length){toast(jobG(k==='weekly'?'لا توجد حصص مسندة لهذا المعلم في الجدول المدرسي':'لا توجد فصول مسندة لهذا المعلم'));return;}
+      if(!fb.classList.contains('armed')&&d.rows.some(x=>x.some(y=>String(y||'').trim()))){fb.classList.add('armed');fb.textContent='تأكيد: استبدال الصفوف الحالية';setTimeout(()=>{if(fb.isConnected)fb.classList.remove('armed');},4000);return;}
+      d.rows=r;d.meta.subject=I.subs.join('، ')||d.meta.subject;await xSet('teacher_'+k,d);dirtyForm=false;toast('عُبّئت '+ar(r.length)+' صفًا');teacherPage();};
     document.getElementById('tSave').onclick=()=>save().catch(()=>{st.className='status err';st.textContent='تعذّر الحفظ';});
     document.getElementById('tAdd').onclick=async()=>{Object.assign(d,collect());d.rows.push(def.cols.map(()=>''));await xSet('teacher_'+k,d);dirtyForm=false;teacherPage();};
     view.querySelectorAll('[data-rr]').forEach(b=>b.onclick=async()=>{Object.assign(d,collect());d.rows.splice(+b.dataset.rr,1);await xSet('teacher_'+k,d);dirtyForm=false;teacherPage();});
@@ -5264,6 +5290,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
         B.rows.map((r,ri)=>'<tr data-r="'+ri+'"><td class="num">'+ar(ri+1)+'</td><td><input class="cell-in" data-s value="'+esc(r.s)+'" aria-label="الاسم">'+(moved.has(r.s)?'<small class="mvtag">نُقل من الفصل</small>':'')+'</td>'+B.cols.map((c,i)=>'<td><input class="cell-in num gin" data-v="'+i+'" value="'+esc(r.v[i]==null?'':String(r.v[i]))+'" inputmode="decimal" aria-label="'+esc(c.n)+'"></td>').join('')+'<td class="num gtot"></td><td class="num gpct"></td><td class="glv"></td><td><button class="xdel" type="button" data-rdel="'+ri+'" aria-label="حذف">×</button></td></tr>').join('')+'</tbody></table></div></div>':'<p class="status">أنشئ سجلًا للبدء.</p>')+'</div>';
     gz(view);bindTeacherBar(gradesPage);
     view.querySelector('#gB').onchange=e=>{lsSet('gbk',e.target.value);gradesPage();};
+    {const gn=view.querySelector('#gNm'),gc=view.querySelector('#gCl'),me=lsGet('perfme','');if(gn&&gc&&me){const I=teacherInfo(me);const upd=()=>{const p=I.pairs.find(x=>x[0]===gc.value&&x[1]!==S_ACT);if(p&&(!gn.value||gn.dataset.auto)){gn.value=shortS(p[1])+' '+gc.value;gn.dataset.auto='1';}};gn.addEventListener('input',()=>{delete gn.dataset.auto;});gc.addEventListener('change',upd);upd();}}
     view.querySelector('#gNew').onsubmit=async e=>{e.preventDefault();const c=(view.querySelector('#gCl')||{}).value||'';const b={id:uid(),cls:c,name:view.querySelector('#gNm').value.trim(),cols:[{n:'المشاركة',max:10},{n:'الواجبات',max:10},{n:'الاختبارات القصيرة',max:20},{n:'المشروع',max:10},{n:'الاختبار النهائي',max:50}],rows:students().filter(s=>c&&s.cls===c).map(s=>({s:s.name,v:[]}))};if(!b.rows.length)b.rows=[{s:'',v:[]}];G.books.push(b);lsSet('gbk',b.id);await xSet('grades',G);gradesPage();};
     if(!B)return;
     const read=()=>{B.cols=B.cols.map((c,i)=>({n:view.querySelector('[data-cn="'+i+'"]').value.trim()||c.n,max:num(view.querySelector('[data-cm="'+i+'"]').value)||c.max}));B.rows=[...view.querySelectorAll('tbody tr')].map(tr=>({s:tr.querySelector('[data-s]').value.trim(),v:B.cols.map((_,i)=>num(tr.querySelector('[data-v="'+i+'"]').value))}));};
