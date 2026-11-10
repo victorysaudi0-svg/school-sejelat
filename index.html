@@ -493,6 +493,10 @@ td.warn{color:var(--warn);font-weight:700}td.bad{color:var(--bad);font-weight:70
 .ttload{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.ttload span{border:1px solid var(--rule);border-radius:999px;padding:4px 10px;font-size:13px}.ttload span.ok{border-color:#07A869;background:rgba(7,168,105,.08)}.ttload span.over{border-color:#C4314B;background:rgba(196,49,75,.08)}
 .ttgrid th,.ttgrid td{min-width:96px;text-align:center;vertical-align:top}.ttgrid td select{min-width:88px;font-size:13px;padding:4px}.ttgrid td small{display:block;font-size:11px;opacity:.75;margin-top:2px}.ttgrid td b{display:block;font-size:13px}
 .ttgrid td.clash{background:rgba(196,49,75,.12);outline:2px solid #C4314B;outline-offset:-2px}.ttgrid td.na{background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(0,0,0,.04) 6px 12px)}
+.tchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}.tchips span{border:1px solid var(--rule);border-radius:999px;padding:5px 11px;font-size:13px;color:var(--ink);opacity:.75}.tchips span.on{border-color:#07A869;background:rgba(7,168,105,.1);color:#05744A;opacity:1;font-weight:700}.tchips i{font-style:normal;font-weight:400;font-size:11px;opacity:.75}.tchips b{background:#07A869;color:#fff;border-radius:999px;padding:0 7px;margin-inline-start:4px}
+.ttasg td.on{background:rgba(7,168,105,.1)}.ttasg td.on select{border-color:#07A869;color:#05744A;font-weight:700}
+.ttsw{font:inherit;font-size:13px;width:100%;min-height:40px;border:1px dashed var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink);cursor:pointer;padding:4px}.ttsw:hover{border-color:var(--brand)}.ttsw.pick{background:#E0A526;color:#fff;border-style:solid}.ttsw i{opacity:.5;font-style:normal}
+.sbt td{min-width:130px}.sbt td select{font-size:13px;padding:4px}.sbt th small{display:block;font-weight:400;font-size:11px;opacity:.7}
 .ttout{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}.ttout .btn{justify-content:center;padding:14px}
 .notice{background:var(--warn-bg);color:var(--ink);font-size:14px}
 .notice .wrap{padding-block:8px}
@@ -3882,7 +3886,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
       ['honorboard','honor','لوحة المتميزين','أسماء المتميزين كل شهر، تُطبع لوحة شرف بتصميم جاهز.']]],
     ['الجداول والتنظيم',[
       ['duty','duty','جدول المناوبة والإشراف','توزيع تلقائي وعادل للمناوبة والإشراف على الموظفين، جاهز للطباعة.'],
-      ['cover','sub','حصص الانتظار','حدّد المعلم الغائب، فيقترح لك أقل المعلمين انتظارًا في كل حصة، ويطبع كشف التكليف.'],
+      ['cover','sub','جدول الانتظار وحصص الانتظار','جدول انتظار أسبوعي (الانتظار الأول إلى الرابع) يُوزَّع تلقائيًا بالعدل، وحدّد المعلم الغائب فيُقترح من يغطي حصصه.'],
       ['minutes','minutes','محاضر الاجتماعات','محضر لكل اجتماع: الحضور والتوصيات والمسؤول والموعد، مع متابعة التوصيات غير المنفذة.'],
       ['calendar','cal','تقويم المهام المدرسية','مواعيد العام الدراسي المقترحة مع تنبيه بمهام الشهر وتعليم المنجز.']]],
     ['التواصل',[
@@ -4059,26 +4063,71 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
   }
 
   /* ---------- 2. behaviour ---------- */
-  const DEG=[['الأولى','تنبيه شفهي للطالب وتدوين الملاحظة.'],['الثانية','إشعار ولي الأمر، وأخذ تعهد خطي على الطالب.'],['الثالثة','استدعاء ولي الأمر، وإحالة الطالب إلى الموجه الطلابي.'],['الرابعة','إحالة الحالة إلى لجنة التوجيه والإرشاد واتخاذ ما تقرره.'],['الخامسة','إحالة الحالة إلى لجنة التوجيه والإرشاد وإشعار الجهات المختصة وفق اللائحة.']];
+  /* violations as listed in «قواعد تنظيم السلوك والمواظبة» (وزارة التعليم): intermediate & secondary (5 degrees), primary (4 degrees). [text, 'b'|'g'|''] — b/g: for boys' / girls' schools only */
+  const VIOL_MS=[
+    [['عدم الالتزام باللباس المدرسي أو الظهور بهيئة مخالفة للنظام المدرسي'],['العبث أثناء الاصطفاف الصباحي أو ضعف المشاركة فيه'],['تعطيل الحصص: الحديث الجانبي أو النوم أو المقاطعة غير الهادفة أو الأكل والشرب أثناء الدرس'],['دخول الفصل أو الخروج منه دون استئذان، أو التأخر عن الدخول'],['تكرار الخروج من البوابة قبل وصول الحافلة أو التجمهر حولها']],
+    [['الغش في الواجبات أو الاختبارات غير الفصلية'],['إثارة الفوضى داخل الفصل أو المدرسة أو الحافلة (العبث بالماء والبخاخات، رفع الصوت، الكتابة على الجدران)'],['الإساءة إلى الكتب الدراسية'],['الهروب من الحصة أو الخروج من الفصل دون استئذان أو التغيب عنها']],
+    [['التهاون في أداء الصلاة داخل المدرسة أو العبث أثناءها'],['الإشارات المخلة بالآداب تجاه الزملاء'],['الشجار أو الاشتراك في المضاربة أو الاعتداء على الزملاء أو تهديدهم أو مخاطبتهم بألفاظ غير لائقة'],['الإضرار المتعمد بممتلكات الزملاء أو سرقتها أو تخويفهم'],['إحضار مواد أو ألعاب خطرة دون استخدامها (الألعاب النارية، البخاخات الغازية)'],['حيازة مواد إعلامية ممنوعة أو مجسمات ممنوعة'],['حيازة السجائر'],['التوقيع عن ولي الأمر على المكاتبات بين المدرسة وولي الأمر دون علمه'],['إحضار أجهزة الاتصال الشخصية إلى المدرسة']],
+    [['الإصرار على ترك الصلاة مع الطلاب والمعلمين دون عذر شرعي'],['العبث بالمواد أو الألعاب الخطرة (المفرقعات، المواد الحارقة)'],['تعمد إصابة أحد الطلاب بالضرب أو بأدوات غير حادة تسبب جرحًا أو نزفًا أو كسرًا'],['التدخين داخل المدرسة'],['الهروب من المدرسة'],['التنمر'],['عرض المواد الإعلامية الممنوعة أو توزيعها'],['شبهة تزوير الوثائق أو تقليد الأختام الرسمية'],['السلوك الغريب أو التشبه بالجنس الآخر'],['إحضار شخص لأداء الاختبار بدلًا من الطالب'],['إحضار أجهزة اتصال تحتوي على صور أو مقاطع غير لائقة'],['العبث بتجهيزات المدرسة أو مبانيها (الحاسب، المعامل، الحافلة، معدات الأمن والسلامة)'],['تصوير الطلاب أو تسجيل أصواتهم بالأجهزة الإلكترونية','b'],
+     ['التلفظ بألفاظ غير لائقة تجاه المعلمين أو الإداريين أو من في حكمهم'],['الاستهانة بالمعلمين أو الإداريين بتصرفات غير لائقة أو السخرية منهم'],['التوقيع عن أحد منسوبي المدرسة على المكاتبات بين المدرسة وولي الأمر'],['تصوير المعلمين أو الإداريين أو تسجيل أصواتهم','b']],
+    [['تعمد إتلاف تجهيزات المدرسة أو مبانيها أو تخريبها'],['تهديد الطلاب بالأسلحة النارية أو ما في حكمها'],['الاستخدام غير المشروع للوثائق أو الأختام الرسمية'],['التحرش الجنسي'],['تصوير الطالبات أو تسجيل أصواتهن بالأجهزة الإلكترونية','g'],['إشعال النار داخل المدرسة'],['حيازة الأسلحة النارية أو ما في حكمها (السكاكين، الأدوات الحادة، الرصاص)'],
+     ['تهديد المعلمين أو الإداريين أو الإضرار بممتلكاتهم أو سرقتها'],['الإشارات المخلة بالآداب تجاه المعلمين أو الإداريين'],['تصوير المعلمات أو الإداريات أو تسجيل أصواتهن','g']]
+  ];
+  const VIOL_P=[
+    [['عدم الالتزام باللباس المدرسي أو الظهور بهيئة مخالفة للنظام المدرسي'],['تكرار النوم داخل الفصل'],['الخروج من الفصل أو الدخول إليه دون استئذان'],['تكرار الخروج من البوابة وقت الانصراف أو التجمهر حولها']],
+    [['افتعال الفوضى داخل المدرسة (الكتابة على الجدران، العبث بالماء)'],['الاشتراك في مضاربة أو عراك'],['إلحاق الضرر المتعمد بممتلكات الزملاء'],['الشجار مع الزملاء أو تهديدهم'],['الهروب من الحصص الدراسية'],['إحضار أجهزة الاتصال مثل الهاتف المحمول أو الجهاز اللوحي'],['محاولة تخريب تجهيزات المدرسة أو مبانيها'],['سرقة شيء من ممتلكات الزملاء أو المدرسة']],
+    [['التلفظ بكلمات غير لائقة تجاه المعلمين أو الإداريين'],['إلحاق الضرر المتعمد بممتلكات المعلمين أو المدرسة'],['سرقة شيء من ممتلكات المعلمين أو المدرسة'],['تعمد إتلاف شيء من ممتلكات المدرسة أو تجهيزاتها'],['حيازة المواد الإعلامية الممنوعة أو عرضها'],['إحضار المواد أو الألعاب الخطرة أو استخدامها'],['إحضار أجهزة اتصال شخصية تحتوي على مواد غير لائقة'],['التوقيع عن ولي الأمر دون علمه']],
+    [['التحرش الجنسي المباشر'],['إشعال النار داخل المدرسة'],['حيازة السجائر أو التدخين'],['إحضار آلة حادة بقصد التهديد أو الاعتداء']]
+  ];
+  /* procedures by degree and by how many times the student repeated a violation of that degree */
+  const PROC=[
+    ['تنبيه شفهي فردي.','تنبيه شفهي فردي ثانٍ.','تدوين المخالفة وتوقيع الطالب عليها.','إشعار ولي الأمر وتحويل الطالب إلى الموجه الطلابي.','أخذ تعهد على الطالب، واستدعاء ولي الأمر، وحسم درجة من السلوك وإشعار ولي الأمر بالحسم.'],
+    ['تعهد خطي، وإشعار ولي الأمر، وإصلاح ما أتلفه الطالب، وإحالته إلى الموجه الطلابي.','دعوة ولي الأمر، وتعهد خطي، وإصلاح التالف، وحسم درجتين من السلوك، وإحالة الطالب إلى الموجه الطلابي.','الإجراءات السابقة مع نقل الطالب إلى فصل آخر وإحالته إلى لجنة التوجيه والإرشاد.','الإجراءات السابقة مع إنذار ولي الأمر بنقل الطالب إلى مدرسة أخرى عند تكرار المخالفة، والإحالة إلى وحدة الخدمات الإرشادية.'],
+    ['إشعار ولي الأمر، وتعهد خطي، واعتذار الطالب، وإصلاح التالف، ومصادرة الممنوعات (الجهاز لمدة فصل دراسي ثم يُسلَّم لولي الأمر)، وحسم ثلاث درجات من السلوك، والإحالة إلى الموجه الطلابي.','الإجراءات السابقة مع دعوة ولي الأمر، ونقل الطالب إلى فصل آخر، وإحالته إلى لجنة التوجيه والإرشاد.','الإجراءات السابقة مع إنذار الطالب بالنقل إلى مدرسة أخرى عند تكرار المخالفة.'],
+    ['الإحالة إلى لجنة التوجيه والإرشاد، ودعوة ولي الأمر، وتعهد خطي، واعتذار الطالب، ونقله إلى فصل آخر، وإصلاح التالف، ومصادرة الممنوعات (الجهاز لمدة عام دراسي)، وحسم عشر درجات من السلوك، والإحالة إلى الموجه الطلابي.','الإجراءات السابقة مع حرمان الطالب من الدراسة لمدة أسبوع، والإحالة إلى وحدة الخدمات الإرشادية.','الإجراءات السابقة مع حرمان الطالب من الدراسة لمدة شهر.','الإجراءات السابقة مع نقل الطالب إلى مدرسة أخرى.'],
+    ['كتابة محضر بالواقعة، واستدعاء الجهات الأمنية عند الحاجة، وضبط الأداة أو الجهاز وتسليمه للجهات المختصة، وعقد اجتماع عاجل للجنة التوجيه والإرشاد، والرفع للجنة قضايا الطلاب بإدارة التعليم، وحسم خمس عشرة درجة من السلوك.']
+  ];
+  const DEG=[['الأولى'],['الثانية'],['الثالثة'],['الرابعة'],['الخامسة']];
+  const behPrimary=()=>/ابتدائ/.test(ST.settings.stage||'')&&!/متوسط|ثانو/.test(ST.settings.stage||'');
+  const violList=d=>(behPrimary()?VIOL_P:VIOL_MS)[d].filter(([t,g])=>!g||(g==='g')===girls()).map(([t])=>uiG(t));
+  const procFor=(d,n)=>{const L=PROC[d]||PROC[0];return uiG(jobG(L[Math.min(n,L.length-1)]));};
+  /* a class → student picker that fills a name input */
+  const clsPick=(id,list)=>{const C=classes();return C.length?'<select id="'+id+'" class="cell-in clspick" aria-label="الفصل"'+(list?' data-list="'+list+'"':'')+'><option value="">🏫 '+uiG('اختر الفصل')+'</option>'+C.map(c=>'<option'+(c===lsGet('lastcls','')?' selected':'')+'>'+esc(c)+'</option>').join('')+'</select>':'';};
   function behaviorPage(){
     document.title='المخالفات السلوكية';
     const b=xGet('behavior',{items:[]});b.items=b.items||[];
     const cnt={};b.items.forEach(x=>{cnt[x.student]=(cnt[x.student]||0)+1;});
-    view.innerHTML='<div class="wrap panel-page">'+pageHead('المخالفات السلوكية','سجّل المخالفة ودرجتها، ويُقترح إجراء مناسب يمكنك تعديله. الإجراءات المقترحة للمساعدة فقط، والمرجع لائحة قواعد السلوك والمواظبة المعتمدة.')+stuDL()+
-      '<div class="lgrid"><form class="card" id="bForm"><h2>تسجيل مخالفة</h2><div class="grid2"><div class="field"><label for="bStu">اسم الطالب</label><input id="bStu" class="cell-in" list="stuDL" required></div><div class="field"><label>التاريخ</label>'+hDate('bDate',isoToday())+'</div></div>'+
-      '<div class="field"><label for="bDesc">وصف المخالفة</label><input id="bDesc" class="cell-in" required></div><div class="field"><label>الدرجة</label>'+seg('bDeg',DEG.map((d,i)=>[String(i),d[0]]),'0')+'</div>'+
-      '<div class="field"><label for="bAct">الإجراء المتخذ</label><textarea id="bAct" class="cell-in" rows="2">'+esc(DEG[0][1])+'</textarea></div><div class="row-actions"><button class="btn primary" type="submit">حفظ المخالفة</button><span class="status" id="bRep"></span></div></form>'+
-      '<div class="card"><h2>السجل <small class="num">('+ar(b.items.length)+')</small></h2>'+(b.items.length?'<ul class="alist">'+b.items.slice().reverse().slice(0,60).map(x=>'<li class="'+(cnt[x.student]>=3?'bad':cnt[x.student]>=2?'warn':'')+'"><b>'+esc(x.student)+'</b><small>'+esc(hOf(x.date))+' · الدرجة '+esc(DEG[x.deg][0])+'</small><span>'+esc(x.desc)+'</span><span class="num">تكرار: '+ar(cnt[x.student])+'</span><button class="btn" type="button" data-pr="'+x.id+'">⬇ محضر</button><button class="xdel" type="button" data-rm="'+x.id+'" aria-label="حذف">×</button></li>').join('')+'</ul>':'<p class="status">لا توجد مخالفات مسجلة.</p>')+'</div></div></div>';
+    const nd=behPrimary()?4:5,C=classes(),lc=C.includes(lsGet('lastcls',''))?lsGet('lastcls',''):'';
+    view.innerHTML='<div class="wrap panel-page">'+pageHead('المخالفات السلوكية','اختر الفصل ثم الطالب، ثم درجة المخالفة ونوعها كما وردت في قواعد تنظيم السلوك والمواظبة'+(behPrimary()?' (المرحلة الابتدائية)':' (المرحلتان المتوسطة والثانوية)')+'، ويُقترح الإجراء حسب تكرار المخالفة. الإجراءات المقترحة للمساعدة، والمرجع القواعد المعتمدة.')+stuDL()+
+      '<div class="lgrid"><form class="card" id="bForm"><h2>تسجيل مخالفة</h2>'+
+      '<div class="grid2">'+(C.length?'<div class="field"><label for="bCls">الفصل</label>'+clsPick('bCls')+'</div>':'')+
+      '<div class="field"><label for="bStu">'+uiG('اسم الطالب')+'</label>'+(C.length?'<select id="bStuSel" class="cell-in" aria-label="'+uiG('اختر الطالب')+'"></select>':'')+'<input id="bStu" class="cell-in" list="stuDL" placeholder="'+uiG('أو اكتب اسم الطالب')+'" required'+(C.length?' style="margin-top:6px"':'')+'></div>'+
+      '<div class="field"><label>التاريخ</label>'+hDate('bDate',isoToday())+'</div></div>'+
+      '<div class="field"><label>درجة المخالفة</label>'+seg('bDeg',DEG.slice(0,nd).map((d,i)=>[String(i),d[0]]),'0')+'</div>'+
+      '<div class="field"><label for="bType">المخالفة</label><select id="bType" class="cell-in"></select></div>'+
+      '<div class="field" id="bDescF" hidden><label for="bDesc">وصف المخالفة</label><input id="bDesc" class="cell-in"></div>'+
+      '<div class="field"><label for="bAct">الإجراء المقترح <small class="status" id="bStep"></small></label><textarea id="bAct" class="cell-in" rows="3"></textarea></div><div class="row-actions"><button class="btn primary" type="submit">حفظ المخالفة</button><span class="status" id="bRep"></span></div></form>'+
+      '<div class="card"><h2>السجل <small class="num">('+ar(b.items.length)+')</small></h2>'+(b.items.length?'<ul class="alist">'+b.items.slice().reverse().slice(0,60).map(x=>'<li class="'+(cnt[x.student]>=3?'bad':cnt[x.student]>=2?'warn':'')+'"><b>'+esc(x.student)+'</b><small>'+esc(x.cls?x.cls+' · ':'')+esc(hOf(x.date))+' · الدرجة '+esc((DEG[x.deg]||DEG[0])[0])+'</small><span>'+esc(x.desc)+'</span><span class="num">تكرار: '+ar(cnt[x.student])+'</span><button class="btn" type="button" data-pr="'+x.id+'">⬇ محضر</button><button class="xdel" type="button" data-rm="'+x.id+'" aria-label="حذف">×</button></li>').join('')+'</ul>':'<p class="status">لا توجد مخالفات مسجلة.</p>')+'</div></div></div>';
     gz(view);
-    const f=view.querySelector('#bForm');
-    f.addEventListener('input',()=>{dirtyForm=true;const n=cnt[f.querySelector('#bStu').value.trim()]||0;view.querySelector('#bRep').textContent=n?'سبق تسجيل '+ar(n)+' مخالفة لهذا الطالب':'';});
-    f.querySelectorAll('[name=bDeg]').forEach(r=>r.onchange=()=>{f.querySelector('#bAct').value=DEG[+r.value][1];});
-    f.onsubmit=async e=>{e.preventDefault();const name=f.querySelector('#bStu').value.trim(),desc=f.querySelector('#bDesc').value.trim();if(!name||!desc)return;
-      const s=students().find(x=>x.name===name);b.items.push({id:uid(),student:name,cls:s?s.cls:'',date:f.querySelector('#bDate').value||isoToday(),desc,deg:+f.elements.bDeg.value,action:f.querySelector('#bAct').value.trim()});
+    const f=view.querySelector('#bForm'),g=s=>f.querySelector(s);
+    const deg=()=>+((f.querySelector('[name=bDeg]:checked')||{}).value||0);
+    const fillStu=()=>{const sel=g('#bStuSel'),c=g('#bCls');if(!sel)return;const L=students().filter(s=>s.cls===c.value).sort((a,b2)=>a.name.localeCompare(b2.name,'ar'));
+      sel.innerHTML='<option value="">'+(c.value?'👤 '+uiG('اختر الطالب')+' ('+ar(L.length)+')':uiG('اختر الفصل أولًا'))+'</option>'+L.map(s=>'<option'+(s.name===g('#bStu').value?' selected':'')+'>'+esc(s.name)+'</option>').join('');};
+    const fillType=()=>{const L=violList(deg());g('#bType').innerHTML=L.map(t=>'<option>'+esc(t)+'</option>').join('')+'<option value="__o">مخالفة أخرى (اكتب الوصف)</option>';g('#bDescF').hidden=true;};
+    const suggest=()=>{const n=g('#bStu').value.trim(),d=deg(),prev=b.items.filter(x=>x.student===n&&x.deg===d).length;g('#bAct').value=procFor(d,prev);
+      g('#bStep').textContent=n?'(التكرار '+ar(prev+1)+' لمخالفات الدرجة '+DEG[d][0]+')':'';const all=cnt[n]||0;g('#bRep').textContent=all?'سبق تسجيل '+ar(all)+' مخالفة لهذا الطالب':'';};
+    if(g('#bCls')){g('#bCls').onchange=()=>{lsSet('lastcls',g('#bCls').value);fillStu();};g('#bStuSel').onchange=()=>{g('#bStu').value=g('#bStuSel').value;suggest();};fillStu();}
+    g('#bStu').addEventListener('change',suggest);
+    f.querySelectorAll('[name=bDeg]').forEach(r=>r.onchange=()=>{fillType();suggest();});
+    g('#bType').onchange=()=>{const o=g('#bType').value==='__o';g('#bDescF').hidden=!o;if(o)g('#bDesc').focus();};
+    fillType();suggest();
+    f.addEventListener('input',()=>{dirtyForm=true;});
+    f.onsubmit=async e=>{e.preventDefault();const name=g('#bStu').value.trim(),ty=g('#bType').value,desc=ty==='__o'?g('#bDesc').value.trim():ty;if(!name){toast(uiG('اختر الطالب'));return;}if(!desc){toast('اكتب وصف المخالفة');return;}
+      const s=students().find(x=>x.name===name);b.items.push({id:uid(),student:name,cls:s?s.cls:((g('#bCls')||{}).value||''),date:g('#bDate').value||isoToday(),desc,deg:deg(),action:g('#bAct').value.trim()});
       await xSet('behavior',b);dirtyForm=false;toast('سُجلت المخالفة');behaviorPage();};
     view.querySelectorAll('[data-rm]').forEach(x=>{let armed=false;x.onclick=async()=>{if(!armed){armed=true;x.textContent='؟';setTimeout(()=>{armed=false;x.textContent='×';},3000);return;}b.items=b.items.filter(i=>i.id!==x.dataset.rm);await xSet('behavior',b);behaviorPage();};});
     view.querySelectorAll('[data-pr]').forEach(x=>x.onclick=()=>{const it=b.items.find(i=>i.id===x.dataset.pr);const prev=b.items.filter(i=>i.student===it.student);
-      printSheets('محضر مخالفة',[{title:'محضر مخالفة سلوكية',html:'<h4 class="ttl">محضر إثبات مخالفة سلوكية</h4>'+sTable(['اسم الطالب','الفصل','اليوم','التاريخ','درجة المخالفة'],[[esc(it.student),esc(it.cls||''),esc(dayOf(it.date)),esc(hOf(it.date)),esc(DEG[it.deg][0])]])+
+      printSheets('محضر مخالفة',[{title:'محضر مخالفة سلوكية',html:'<h4 class="ttl">محضر إثبات مخالفة سلوكية</h4>'+sTable(['اسم الطالب','الفصل','اليوم','التاريخ','درجة المخالفة'],[[esc(it.student),esc(it.cls||''),esc(dayOf(it.date)),esc(hOf(it.date)),esc((DEG[it.deg]||DEG[0])[0])]])+
         '<p><b>وصف المخالفة:</b> '+esc(it.desc)+'</p><p><b>الإجراء المتخذ:</b> '+esc(it.action||'')+'</p><p><b>عدد المخالفات المسجلة للطالب:</b> '+ar(prev.length)+'</p><p>&nbsp;</p>'+
         sTable(['','الاسم','التوقيع'],[['الطالب',esc(it.student),''],[esc(jobG('الموجه الطلابي')),'',''],[esc(jobG('وكيل شؤون الطلاب')),'',''],['ولي الأمر','','']])+signLine()}]);});
   }
@@ -4143,17 +4192,47 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
 
   /* ---------- 5. cover (substitution) lessons ---------- */
   const PER=7;
+  /* each teacher's lessons: from «الجدول المدرسي» when it exists, otherwise what was typed in «جداول الحصص» */
+  function teachTable(manual){const o={};Object.entries(manual||{}).forEach(([n,g])=>{o[n]=Object.assign({},g);});
+    const t=ttGet();Object.keys(t.grid).forEach(c=>Object.entries(t.grid[c]||{}).forEach(([k,sb])=>{const n=slotTeacher(t,c,sb);if(!n)return;(o[n]=o[n]||{})[k]=c;}));return o;}
+  const SB_L=['الانتظار الأول','الانتظار الثاني','الانتظار الثالث','الانتظار الرابع'];
+  function standbyGen(TT,names,D){
+    const best={sc:1e9};
+    for(let a=0;a<25;a++){const g={},cnt={},c1={},dayC={};names.forEach(n=>{cnt[n]=0;c1[n]=0;});
+      for(let d=0;d<5;d++)for(let k=0;k<D[d];k++){const free=names.filter(n=>!(TT[n]||{})[d+'-'+k]);
+        const teach=n=>Object.keys(TT[n]||{}).length;
+        free.sort((x,y)=>(cnt[x]*3+(dayC[x+d]||0)*4+teach(x)*0.12+Math.random()*0.6)-(cnt[y]*3+(dayC[y+d]||0)*4+teach(y)*0.12+Math.random()*0.6));
+        const pick=free.slice(0,4).sort((x,y)=>c1[x]-c1[y]||cnt[x]-cnt[y]);g[d+'-'+k]=pick;pick.forEach((n,i)=>{cnt[n]++;if(!i)c1[n]++;dayC[n+d]=(dayC[n+d]||0)+1;});}
+      const v=Object.values(cnt),sc=v.length?Math.max(...v)-Math.min(...v):0;if(sc<best.sc){best.sc=sc;best.g=g;}if(sc<=1)break;}
+    return best.g||{};
+  }
   function coverPage(){
-    document.title='حصص الانتظار';
-    const tab=lsGet('covtab','day');
-    const tt=xGet('timetable',{t:{}});tt.t=tt.t||{};
+    document.title='جدول الانتظار';
+    const tab=lsGet('covtab','standby');
+    const tt=xGet('timetable',{t:{}});tt.t=tt.t||{};const TT=teachTable(tt.t),fromSchool=Object.keys(ttGet().grid).length>0;
     const staff=ST.staff.filter(s=>s&&s.name&&!/مدير|وكيل|مساعد|حارس|مستخدم/.test(s.job||''));
-    view.innerHTML='<div class="wrap panel-page">'+pageHead('حصص الانتظار','أدخل جدول حصص كل معلم مرة واحدة، ثم حدّد الغائب، فيقترح لك أنسب المعلمين لكل حصة.')+
-      '<div class="tabs2" role="tablist">'+[['day','توزيع الانتظار'],['tt','جداول الحصص'],['stats','الإحصاء']].map(([k,t])=>'<button type="button" role="tab" data-tab="'+k+'" aria-selected="'+(k===tab)+'">'+t+'</button>').join('')+'</div><div id="cvBody"></div></div>';
+    view.innerHTML='<div class="wrap panel-page">'+pageHead('جدول الانتظار وحصص الانتظار',jobG('وزّع جدول الانتظار الأسبوعي (الانتظار الأول إلى الرابع) تلقائيًا بالعدل، ثم حدّد المعلم الغائب في يومه فيُقترح معلمو الانتظار لكل حصة بالترتيب.'))+
+      '<div class="tabs2" role="tablist">'+[['standby','جدول الانتظار (١–٤)'],['day','توزيع الانتظار اليومي'],['tt','جداول الحصص'],['stats','الإحصاء']].map(([k,t])=>'<button type="button" role="tab" data-tab="'+k+'" aria-selected="'+(k===tab)+'">'+t+'</button>').join('')+'</div><div id="cvBody"></div></div>';
     const body=view.querySelector('#cvBody');
     const mk=k=>'cov_'+k.slice(0,7).replace('-','_');
     const allCov=()=>Object.keys(ST.extra).filter(k=>/^cov_\d{4}_\d{2}$/.test(k)).flatMap(k=>(ST.extra[k]||{}).items||[]);
-    if(tab==='tt'){
+    if(tab==='standby'){
+      const SB=xGet('standby',{g:{}});SB.g=SB.g||{};const D=fromSchool?ttDaily(ttGet()):[PER,PER,PER,PER,PER],names=staff.map(s=>s.name);const day=Math.min(4,+lsGet('sbday',0)||0);
+      const cnt={},c1={};names.forEach(n=>{cnt[n]=0;c1[n]=0;});Object.values(SB.g).forEach(l=>(l||[]).forEach((n,i)=>{if(n in cnt){cnt[n]++;if(!i)c1[n]++;}}));
+      body.innerHTML='<div class="card"><h2>جدول الانتظار الأسبوعي</h2><p class="status">'+esc(jobG('لكل حصة أربعة معلمين احتياط بالترتيب: الانتظار الأول ثم الثاني ثم الثالث ثم الرابع. يُختارون من المعلمين غير المرتبطين بحصة في ذلك الوقت، وتُوزّع بالعدل على أيام الأسبوع.'))+(fromSchool?' الحصص مأخوذة من «الجدول المدرسي».':' أدخل جداول المعلمين من تبويب «جداول الحصص» أو ولّد «الجدول المدرسي» أولًا.')+'</p>'+
+        '<div class="row-actions"><button type="button" class="btn primary" id="sbGen">⚡ توزيع الانتظار تلقائيًا</button><button type="button" class="btn" id="sbOut">⬇ تنزيل جدول الانتظار</button><button type="button" class="btn danger" id="sbClr">مسح</button></div></div>'+
+        '<div class="card">'+tabsHTML(String(day),WDAYS.slice(0,5).map((w,i)=>[String(i),w]),'sbd')+
+        '<div class="mwrap"><table class="mtable sbt"><thead><tr><th>الحصة</th>'+SB_L.map((l,i)=>'<th>'+l+'</th>').join('')+'</tr></thead><tbody>'+Array.from({length:D[day]},(_,k)=>{const key=day+'-'+k,cur=SB.g[key]||[],free=names.filter(n=>!(TT[n]||{})[key]);
+          return '<tr><th>'+(PER_ORD[k]||ar(k+1))+'<small>'+ar(free.length)+' متاح</small></th>'+SB_L.map((l,i)=>'<td><select class="cell-in" data-sb="'+key+'" data-l="'+i+'"><option value=""></option>'+free.map(n=>'<option value="'+esc(n)+'"'+(cur[i]===n?' selected':'')+'>'+esc(n)+' ('+ar(cnt[n]||0)+')</option>').join('')+'</select></td>').join('')+'</tr>';}).join('')+'</tbody></table></div>'+
+        '<h2 style="margin-top:14px">'+esc(jobG('نصيب كل معلم'))+'</h2><div class="ttload">'+names.map(n=>'<span class="'+(cnt[n]?'ok':'')+'">'+esc(n)+' <b class="num">'+ar(cnt[n])+'</b>'+(c1[n]?' <small>(أول: '+ar(c1[n])+')</small>':'')+'</span>').join('')+'</div></div>';
+      body.querySelectorAll('[data-sbd]').forEach(b=>b.onclick=()=>{lsSet('sbday',+b.dataset.sbd);coverPage();});
+      body.querySelectorAll('[data-sb]').forEach(x=>x.onchange=async()=>{const l=SB.g[x.dataset.sb]=(SB.g[x.dataset.sb]||[]).slice();l[+x.dataset.l]=x.value;for(let i=0;i<4;i++)if(i!==+x.dataset.l&&l[i]===x.value&&x.value)l[i]='';await xSet('standby',SB);coverPage();});
+      body.querySelector('#sbGen').onclick=async()=>{if(!names.length){toast(jobG('أضف المعلمين أولًا'));return;}SB.g=standbyGen(TT,names,D);await xSet('standby',SB);toast('وُزّع الانتظار بالعدل على '+ar(names.length)+' '+jobG('معلمًا'));coverPage();};
+      const clr=body.querySelector('#sbClr');clr.onclick=async()=>{if(!clr.classList.contains('armed')){clr.classList.add('armed');clr.textContent='تأكيد المسح';return;}SB.g={};await xSet('standby',SB);coverPage();};
+      body.querySelector('#sbOut').onclick=()=>{const sh=[0,1,2,3,4].map(d=>({title:'جدول الانتظار - '+WDAYS[d],html:'<h4 class="ttl">جدول الانتظار ليوم '+WDAYS[d]+'</h4><table><tr><td>الحصة</td>'+SB_L.map(l=>'<td>'+l+'</td>').join('')+'</tr>'+Array.from({length:D[d]},(_,k)=>'<tr><td><b>'+(PER_ORD[k]||ar(k+1))+'</b></td>'+[0,1,2,3].map(i=>'<td style="text-align:center">'+esc((SB.g[d+'-'+k]||[])[i]||'')+'</td>').join('')+'</tr>').join('')+'</table>'}));
+        sh.push({title:'نصيب المعلمين من الانتظار',html:'<h4 class="ttl">'+esc(jobG('نصيب المعلمين من حصص الانتظار'))+'</h4><table><tr><td>م</td><td>'+esc(jobG('المعلم'))+'</td><td>عدد مرات الانتظار</td><td>منها الانتظار الأول</td><td>التوقيع</td></tr>'+names.map((n,i)=>'<tr><td>'+ar(i+1)+'</td><td>'+esc(n)+'</td><td>'+ar(cnt[n])+'</td><td>'+ar(c1[n])+'</td><td></td></tr>').join('')+'</table>'+signLine()});
+        chooseFormat('جدول الانتظار',sh);};
+    } else if(tab==='tt'){
       const who=lsGet('covt',staff[0]?staff[0].name:'');const g=tt.t[who]||{};
       body.innerHTML='<div class="card"><div class="row-actions"><label>المعلم <select id="ttW" class="cell-in" style="width:auto">'+staff.map(s=>'<option'+(s.name===who?' selected':'')+'>'+esc(s.name)+'</option>').join('')+'</select></label><small class="status">اكتب الفصل في خانة الحصة التي يدرّسها، واترك الحصص الفارغة.</small></div>'+
         (staff.length?'<div class="tw tedit"><table><thead><tr><th>اليوم</th>'+Array.from({length:PER},(_,i)=>'<th>الحصة '+ar(i+1)+'</th>').join('')+'</tr></thead><tbody>'+[0,1,2,3,4].map(di=>'<tr><td>'+WDAYS[di]+'</td>'+Array.from({length:PER},(_,p)=>'<td><input class="cell-in" data-k="'+di+'-'+p+'" value="'+esc(g[di+'-'+p]||'')+'" aria-label="'+WDAYS[di]+' الحصة '+(p+1)+'"></td>').join('')+'</tr>').join('')+'</tbody></table></div><div class="row-actions"><button class="btn primary" type="button" id="ttSave">حفظ جدول المعلم</button><span class="status">'+ar(Object.keys(tt.t).length)+' معلمين لهم جداول</span></div>':'<p>أضف الموظفين أولًا من بيانات المدرسة.</p>')+'</div>';
@@ -4167,13 +4246,15 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
       const date=lsGet('covd',isoToday()),di=isoDate(date).getDay();const absent=lsGet('cova',[]);
       const items=(xGet(mk(date),{items:[]}).items||[]).filter(x=>x.date===date);
       const load={};allCov().forEach(x=>{load[x.sub]=(load[x.sub]||0)+1;});
-      const busy=(n,p)=>!!((tt.t[n]||{})[di+'-'+p])||items.some(x=>x.sub===n&&x.p===p);
-      const need=[];if(di<5)absent.forEach(a=>{for(let p=0;p<PER;p++){const cls=(tt.t[a]||{})[di+'-'+p];if(cls)need.push({a,p,cls});}});
+      const busy=(n,p)=>!!((TT[n]||{})[di+'-'+p])||items.some(x=>x.sub===n&&x.p===p);const SBg=xGet('standby',{g:{}}).g||{};
+      const need=[];if(di<5)absent.forEach(a=>{for(let p=0;p<9;p++){const cls=(TT[a]||{})[di+'-'+p];if(cls)need.push({a,p,cls});}});
       body.innerHTML='<div class="card"><div class="row-actions"><label>التاريخ '+hDate('cvD',date)+'</label><b>'+esc(dayOf(date))+'</b></div>'+
-        (di>4?'<p class="status">هذا اليوم ليس يوم دراسة.</p>':'<div class="field"><label>المعلمون الغائبون</label><div class="pickl">'+staff.map(s=>'<label><input type="checkbox" value="'+esc(s.name)+'"'+(absent.includes(s.name)?' checked':'')+'><span>'+esc(s.name)+'</span><small>'+(tt.t[s.name]?ar(Object.keys(tt.t[s.name]).filter(k=>k.startsWith(di+'-')).length)+' حصص اليوم':'بلا جدول')+'</small></label>').join('')+'</div></div>')+
+        (di>4?'<p class="status">هذا اليوم ليس يوم دراسة.</p>':'<div class="field"><label>المعلمون الغائبون</label><div class="pickl">'+staff.map(s=>'<label><input type="checkbox" value="'+esc(s.name)+'"'+(absent.includes(s.name)?' checked':'')+'><span>'+esc(s.name)+'</span><small>'+(TT[s.name]?ar(Object.keys(TT[s.name]).filter(k=>k.startsWith(di+'-')).length)+' حصص اليوم':'بلا جدول')+'</small></label>').join('')+'</div></div>')+
         (need.length?'<div class="tw tedit"><table><thead><tr><th>الحصة</th><th>الفصل</th><th>المعلم الغائب</th><th>معلم الانتظار</th></tr></thead><tbody>'+need.map((x,i)=>{const done=items.find(y=>y.p===x.p&&y.absent===x.a);
-          const cands=staff.map(s=>s.name).filter(n=>!absent.includes(n)&&tt.t[n]&&(!busy(n,x.p)||(done&&done.sub===n))).sort((u,v)=>(load[u]||0)-(load[v]||0)||Object.keys(tt.t[u]).filter(k=>k.startsWith(di+'-')).length-Object.keys(tt.t[v]).filter(k=>k.startsWith(di+'-')).length);
-          return '<tr><td>'+ar(x.p+1)+'</td><td>'+esc(x.cls)+'</td><td>'+esc(x.a)+'</td><td><select class="cell-in" data-i="'+i+'">'+cands.map((n,j)=>'<option value="'+esc(n)+'"'+((done?done.sub===n:j===0)?' selected':'')+'>'+esc(n)+' ('+ar(load[n]||0)+')</option>').join('')+'<option value="">— بدون —</option></select></td></tr>';}).join('')+'</tbody></table></div><p class="status">الرقم بجانب الاسم: عدد حصص الانتظار السابقة. يُقترح الأقل انتظارًا ثم الأقل حصصًا في اليوم.</p>'+
+          const sbl=(SBg[di+'-'+x.p]||[]),taken=need.slice(0,i).filter(y=>y.p===x.p).length;
+          const cands=staff.map(s=>s.name).filter(n=>!absent.includes(n)&&TT[n]&&(!busy(n,x.p)||(done&&done.sub===n))).sort((u,v)=>{const su=sbl.indexOf(u),sv=sbl.indexOf(v);return (su<0?9:su)-(sv<0?9:sv)||(load[u]||0)-(load[v]||0)||Object.keys(TT[u]).filter(k=>k.startsWith(di+'-')).length-Object.keys(TT[v]).filter(k=>k.startsWith(di+'-')).length;});
+          const def=cands.filter(n=>sbl.includes(n))[taken]||cands[taken]||cands[0];
+          return '<tr><td>'+(PER_ORD[x.p]||ar(x.p+1))+'</td><td>'+esc(x.cls)+'</td><td>'+esc(x.a)+'</td><td><select class="cell-in" data-i="'+i+'">'+cands.map((n,j)=>'<option value="'+esc(n)+'"'+((done?done.sub===n:n===def)?' selected':'')+'>'+(sbl.includes(n)?'⭐ '+SB_L[sbl.indexOf(n)]+': ':'')+esc(n)+' ('+ar(load[n]||0)+')</option>').join('')+'<option value="">— بدون —</option></select></td></tr>';}).join('')+'</tbody></table></div><p class="status">⭐ معلمو جدول الانتظار لتلك الحصة بالترتيب، ثم الأقل انتظارًا. الرقم بجانب الاسم: عدد حصص الانتظار السابقة.</p>'+
           '<div class="row-actions"><button class="btn primary" type="button" id="cvSave">اعتماد التوزيع</button><button class="btn" type="button" id="cvPrint"'+(items.length?'':' disabled')+'>⬇ كشف التكليف</button></div>':(absent.length&&di<5?'<p class="status">لا توجد حصص للغائبين في هذا اليوم حسب جداولهم. أدخل جداولهم من تبويب «جداول الحصص».</p>':''))+'</div>';
       const dd=body.querySelector('#cvD');dd.onchange=e=>{lsSet('covd',e.target.value||isoToday());coverPage();};
       body.querySelectorAll('.pickl input').forEach(x=>x.onchange=()=>{lsSet('cova',[...body.querySelectorAll('.pickl input:checked')].map(y=>y.value));coverPage();});
@@ -5132,6 +5213,7 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
       '<div class="card"><h2>التصميم</h2><div class="tplpick" role="radiogroup" aria-label="التصميم">'+SC_TPL.map(([k,t,a,b])=>'<label class="tplopt"><input type="radio" name="sct" value="'+k+'"'+(sv.tpl===k?' checked':'')+'><span><i class="sw"><em style="background:'+a+'"></em><em style="background:'+b+'"></em><em style="background:#fff"></em></i><b>'+t+'</b></span></label>').join('')+'</div></div>'+
       '<div class="lgrid"><form class="card" id="scF"><h2>البيانات</h2><div class="field"><label for="scT">العنوان</label><input id="scT" class="cell-in" value="'+esc(sv.title||'شهادة تفوق')+'"></div>'+
       (hon.length?'<div class="field"><span class="flabel">'+uiG('من لوحة المتميزين هذا الشهر')+'</span><div class="pickl">'+hon.map(x=>'<label><input type="checkbox" data-sch value="'+esc(x.name)+'" data-c="'+esc(x.cls||'')+'" checked><span>'+esc(x.name)+'</span><small>'+esc(x.reason||'')+'</small></label>').join('')+'</div></div>':'')+
+      (classes().length?'<div class="field"><span class="flabel">'+uiG('اختر من الفصل')+'</span><div class="row-actions">'+clsPick('scCls')+'<button type="button" class="btn" id="scAll">تحديد الكل</button><button type="button" class="btn" id="scNone">إلغاء التحديد</button></div><div class="pickl" id="scList"></div></div>':'')+
       '<div class="field"><label for="scN">'+uiG('أسماء أخرى: الاسم ثم الفصل (مفصولين بـ -) في كل سطر')+'</label><textarea id="scN" class="cell-in" rows="3" placeholder="'+esc(uiG('عبدالله محمد - ٣/١'))+'"></textarea></div>'+
       '<div class="field"><label for="scX">النص</label><textarea id="scX" class="cell-in" rows="2">'+esc(sv.text||'تقديرًا لتفوقه وتميزه وحسن خلقه، متمنين له مستقبلًا مشرقًا.')+'</textarea></div>'+
       '<div class="grid2"><div class="field"><label for="scT1">صفة الموقّع الأول</label><input id="scT1" class="cell-in" value="'+esc(sv.t1||jobG('رائد الصف'))+'"></div><div class="field"><label for="scN1">اسمه</label><input id="scN1" class="cell-in" list="sigN2" value="'+esc(sv.n1||'')+'"><datalist id="sigN2">'+staffList().map(x=>'<option value="'+esc(x.name)+'">').join('')+'</datalist></div></div>'+
@@ -5145,6 +5227,9 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     const box=view.querySelector('.certprev'),fit=()=>{const fr=g('#scPrev');if(box&&fr)fr.style.transform='scale('+(box.clientWidth/1123)+')';};
     const upd=()=>{const o=opts(),n=names();lsSet('scert',{tpl:o.tpl,title:o.title,text:o.text,t1:o.t1,n1:o.n1});g('#scSt').textContent=n.length?ar(n.length)+' شهادة':'';g('#scPrev').srcdoc=stuCertHTML(o,[n[0]||{n:uiG('اسم الطالب'),c:''}],lg).replace(/<script>[\s\S]*?<\/script>/,'').replace(/<div class="tip">[\s\S]*?<\/div>/,'');};
     view.firstElementChild.addEventListener('input',()=>{dirtyForm=true;upd();});view.firstElementChild.addEventListener('change',upd);fit();try{new ResizeObserver(fit).observe(box);}catch(e){}upd();
+    const scC=g('#scCls');if(scC){const kept={};const fill=()=>{view.querySelectorAll('#scList [data-sch]').forEach(x=>{kept[x.value]=x.checked;});const L=students().filter(x=>x.cls===scC.value).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+        g('#scList').innerHTML=L.map(x=>'<label><input type="checkbox" data-sch value="'+esc(x.name)+'" data-c="'+esc(x.cls||'')+'"'+(kept[x.name]?' checked':'')+'><span>'+esc(x.name)+'</span></label>').join('')||(scC.value?'<p class="status">'+uiG('لا يوجد طلاب في هذا الفصل')+'</p>':'');upd();};
+      scC.onchange=()=>{lsSet('lastcls',scC.value);fill();};g('#scAll').onclick=()=>{view.querySelectorAll('#scList [data-sch]').forEach(x=>x.checked=true);upd();};g('#scNone').onclick=()=>{view.querySelectorAll('#scList [data-sch]').forEach(x=>x.checked=false);upd();};fill();}
     g('#scP').onclick=()=>{const n=names();if(!n.length){toast(uiG('أضف اسم طالب واحدًا على الأقل'));return;}offerFile(opts().title+' ('+ar(n.length)+')',stuCertHTML(opts(),n,lg),'html');};
   }
 
@@ -5738,6 +5823,20 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     const a=assignAll(),by={};Object.keys(t.asg).forEach(c=>Object.values(t.asg[c]||{}).forEach(n=>{if(!n)return;(by[n]=by[n]||new Set()).add(c);}));
     Object.keys(by).forEach(n=>{a.by[n]=[...new Set((a.by[n]||[]).concat([...by[n]]))];});await xSet('assign',a);
   }
+  const SUBJ_KW=[[/قرآن|إسلامية|التجويد|التوحيد|الفقه|الحديث|التفسير|علوم القرآن/,/قرآن|قران|إسلام|اسلام|شرع|دين|تحفيظ|توحيد|فقه|حديث|تفسير/],[/العربية|اللغوية|الأدبية/,/عرب|لغتي|لغة عربية|أدب/],[/الرياضيات/,/رياضيات/],[/الأحياء|الكيمياء|الفيزياء|العلوم|البيئة|الأرض|الصحية/,/علوم|أحياء|احياء|كيمياء|فيزياء/],[/الإنجليزية/,/إنجليز|انجليز|english/i],[/الاجتماعية|التاريخ|الجغرافيا|النفسية/,/اجتماع|تاريخ|جغراف|اجتماعيات/],[/الرقمية|البيانات|إنترنت|التقنية|الهندسة/,/حاسب|حاسوب|رقمي|تقني|حاسب آلي|computer/i],[/الفنية|الفنون/,/فني|فنون|رسم/],[/البدنية|اللياقة/,/بدني|رياضة|بدنية/],[/الأعمال|الإدارة|المالية|القرار/,/إدار|اقتصاد|محاسب|مالي|أعمال/]];
+  const FLEX=/المهارات الحياتية|التفكير الناقد|^النشاط$|المعرفة المالية|التربية المهنية|البحث|المجال الاختياري|مادة اختيارية/;
+  const subjMatch=(sb,spec)=>{spec=String(spec||'');if(!spec)return false;const r=SUBJ_KW.find(([a])=>a.test(sb));return r?r[1].test(spec):spec.includes(sb)||sb.includes(spec);};
+  function ttAutoAssign(t){
+    const T=ttTeachers(),spec={};staffList().forEach(x=>spec[x.name]=x.spec||'');const load={};T.forEach(n=>load[n]=0);
+    Object.entries(teacherLoad(t)).forEach(([n,o])=>{load[n]=o.p;});
+    const todo=[];classes().forEach(c=>clsPlan(t,c).forEach(([sb,p])=>{if(!(t.asg[c]||{})[sb]&&+p)todo.push([c,sb,+p]);}));
+    todo.sort((a,b)=>(FLEX.test(a[1])?1:0)-(FLEX.test(b[1])?1:0)||b[2]-a[2]);let done=0;const left=[];
+    todo.forEach(([c,sb,p])=>{let cand=T.filter(n=>subjMatch(sb,spec[n]));if(!cand.length&&FLEX.test(sb))cand=T.slice();if(!cand.length){left.push(sb);return;}
+      /* prefer the teacher who already teaches this subject in the same grade, then the lightest load */
+      const g=clsGrade(c);cand.sort((a,b)=>(load[a]+p>24?100:0)-(load[b]+p>24?100:0)||((classes().some(cc=>clsGrade(cc)===g&&(t.asg[cc]||{})[sb]===b)?1:0)-(classes().some(cc=>clsGrade(cc)===g&&(t.asg[cc]||{})[sb]===a)?1:0))||load[a]-load[b]);
+      const n=cand[0];t.asg[c]=t.asg[c]||{};t.asg[c][sb]=n;load[n]+=p;done++;});
+    return {done,left:[...new Set(left)]};
+  }
   function teacherLoad(t){const L={};classes().forEach(c=>clsPlan(t,c).forEach(([s,p])=>{const n=(t.asg[c]||{})[s];if(!n)return;const o=L[n]=L[n]||{p:0,items:[]};o.p+=+p||0;o.items.push([s,c,p]);}));return L;}
   /* automatic timetable: spread each subject over the week, no clashes for a class or a teacher */
   function ttGenerate(t){
@@ -5747,12 +5846,18 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
       const L=[];C.forEach(c=>clsPlan(t,c).forEach(([s,p])=>{for(let i=0;i<(+p||0);i++)L.push({c,s,n:(t.asg[c]||{})[s]||'',p:+p});}));
       const load={};L.forEach(x=>{if(x.n)load[x.n]=(load[x.n]||0)+1;});
       L.sort((a,b)=>(load[b.n]||0)-(load[a.n]||0)||b.p-a.p||Math.random()-.5);
-      L.forEach(x=>{const opts=[];
+      const tDay={},tEdge={},tot=load;
+      L.forEach(x=>{const opts=[];const fair=x.n?Math.ceil((tot[x.n]||0)/5):0;
         for(let d=0;d<5;d++){const same=Object.keys(grid[x.c]).filter(k=>k.startsWith(d+'-')&&grid[x.c][k]===x.s).length;const cap=x.p>5?2:1;if(same>=cap)continue;
           for(let k=0;k<D[d];k++){const key=d+'-'+k;if(grid[x.c][key])continue;if(x.n&&busy[x.n+'|'+key])continue;
             const dayLoad=Object.keys(grid[x.c]).filter(q=>q.startsWith(d+'-')).length;
-            opts.push({key,sc:same*10+dayLoad+(x.s===S_ACT?(D[d]-k)*0.5:k*0.15)+Math.random()*1.5});}}
-        if(!opts.length){miss.push(x);return;}opts.sort((a,b)=>a.sc-b.sc);const key=opts[0].key;grid[x.c][key]=x.s;if(x.n)busy[x.n+'|'+key]=1;});
+            let sc=same*10+dayLoad+(x.s===S_ACT?(D[d]-k)*0.5:k*0.15)+Math.random()*1.5;
+            if(x.n){const td=tDay[x.n+'|'+d]||0;sc+=td>=fair?6+(td-fair)*4:td*0.8; /* spread each teacher's periods evenly over the week */
+              const run=(busy[x.n+'|'+d+'-'+(k-1)]?1:0)+(busy[x.n+'|'+d+'-'+(k-2)]?1:0)+(busy[x.n+'|'+d+'-'+(k+1)]?1:0)+(busy[x.n+'|'+d+'-'+(k+2)]?1:0);sc+=run>=3?5:0; /* avoid long runs */
+              if(k===0||k===D[d]-1)sc+=(tEdge[x.n]||0)*0.9;} /* share first and last periods fairly */
+            opts.push({key,sc});}}
+        if(!opts.length){miss.push(x);return;}opts.sort((a,b)=>a.sc-b.sc);const key=opts[0].key;grid[x.c][key]=x.s;
+        if(x.n){busy[x.n+'|'+key]=1;const d=+key.split('-')[0],k=+key.split('-')[1];tDay[x.n+'|'+d]=(tDay[x.n+'|'+d]||0)+1;if(k===0||k===D[d]-1)tEdge[x.n]=(tEdge[x.n]||0)+1;}});
       if(miss.length<best.miss){best.miss=miss.length;best.grid=grid;best.list=miss;}if(!miss.length)break;}
     return best;
   }
@@ -5811,20 +5916,31 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     const C=classes();
     if(!T.length){body.innerHTML='<div class="card"><p>'+esc(jobG('أضف المعلمين أولًا من «بيانات المدرسة» ← قائمة الموظفين.'))+'</p><a class="btn primary" href="#school-info">بيانات المدرسة</a></div>';return;}
     const subs=[...new Set(C.flatMap(c=>clsPlan(t,c).map(x=>x[0])))];const L=teacherLoad(t);
-    const opt=(cur)=>'<option value="">—</option>'+T.map(n=>'<option'+(n===cur?' selected':'')+'>'+esc(n)+'</option>').join('');
-    body.innerHTML='<div class="card"><h2>'+esc(jobG('إسناد سريع'))+'</h2><p class="status">'+esc(jobG('اختر المعلم والمادة وضع علامة على الفصول، فتُسند المادة وتنتقل الفصول بطلابها إلى المعلم تلقائيًا.'))+'</p>'+
-      '<div class="row-actions"><select id="qT" class="cell-in" style="flex:1;min-width:160px"><option value="">'+esc(jobG('اختر المعلم'))+'</option>'+T.map(n=>'<option>'+esc(n)+'</option>').join('')+'</select><select id="qS" class="cell-in" style="flex:1;min-width:160px"><option value="">اختر المادة</option>'+subs.map(s=>'<option>'+esc(s)+'</option>').join('')+'</select></div>'+
+    const mark=n=>(L[n]?'✓ ':'')+n+(L[n]?' ('+ar(L[n].p)+')':'');
+    const opt=(cur)=>'<option value="">—</option>'+T.map(n=>'<option value="'+esc(n)+'"'+(n===cur?' selected':'')+'>'+esc(mark(n))+'</option>').join('');
+    const spec={};staffList().forEach(x=>spec[x.name]=x.spec||'');
+    body.innerHTML='<div class="card"><h2>'+esc(jobG('المعلمون'))+' <small class="num">'+ar(T.filter(n=>L[n]).length)+'/'+ar(T.length)+' '+esc(jobG('مُسند لهم'))+'</small></h2><div class="tchips">'+T.map(n=>'<span class="'+(L[n]?'on':'')+'" title="'+esc(spec[n]||'')+'">'+(L[n]?'✓ ':'')+esc(n)+(spec[n]?' <i>'+esc(spec[n])+'</i>':'')+(L[n]?' <b class="num">'+ar(L[n].p)+'</b>':'')+'</span>').join('')+'</div>'+
+      '<div class="row-actions"><button type="button" class="btn primary" id="ttFair">⚖️ '+esc(jobG('توزيع المواد على المعلمين بالعدل'))+'</button><span class="status">'+esc(jobG('يُسند كل مادة غير مسندة إلى معلم من تخصصها صاحب أقل نصاب (حتى ٢٤ حصة)، ويُفضّل من يدرّسها للصف نفسه. اكتب تخصص كل معلم في قائمة الموظفين.'))+'</span></div></div>'+
+      '<div class="card"><h2>🔁 '+esc(jobG('تبديل بين معلمين'))+'</h2><div class="row-actions"><select id="swA" class="cell-in" style="flex:1;min-width:150px"><option value="">'+esc(jobG('المعلم الأول'))+'</option>'+T.filter(n=>L[n]).map(n=>'<option value="'+esc(n)+'">'+esc(mark(n))+'</option>').join('')+'</select><select id="swB" class="cell-in" style="flex:1;min-width:150px"><option value="">'+esc(jobG('المعلم الثاني'))+'</option>'+T.map(n=>'<option value="'+esc(n)+'">'+esc(mark(n))+'</option>').join('')+'</select>'+
+      '<select id="swM" class="cell-in" style="width:auto"><option value="swap">'+esc(jobG('تبادل الإسناد بينهما'))+'</option><option value="move">'+esc(jobG('نقل إسناد الأول إلى الثاني'))+'</option></select><button type="button" class="btn" id="swGo">تنفيذ</button></div></div>'+
+      '<div class="card"><h2>'+esc(jobG('إسناد سريع'))+'</h2><p class="status">'+esc(jobG('اختر المعلم والمادة وضع علامة على الفصول، فتُسند المادة وتنتقل الفصول بطلابها إلى المعلم تلقائيًا.'))+'</p>'+
+      '<div class="row-actions"><select id="qT" class="cell-in" style="flex:1;min-width:160px"><option value="">'+esc(jobG('اختر المعلم'))+'</option>'+T.map(n=>'<option value="'+esc(n)+'">'+esc(mark(n))+'</option>').join('')+'</select><select id="qS" class="cell-in" style="flex:1;min-width:160px"><option value="">اختر المادة</option>'+subs.map(s=>'<option>'+esc(s)+'</option>').join('')+'</select></div>'+
       '<div class="ttq" id="qC"></div><div class="row-actions"><button type="button" class="btn primary" id="qGo">إسناد</button><span class="status" id="qSt"></span></div></div>'+
       '<div class="mwrap"><table class="mtable ttasg"><thead><tr><th>المادة</th>'+C.map(c=>'<th class="num">'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+
-      subs.map(s=>'<tr><th>'+esc(shortS(s))+'</th>'+C.map(c=>{const p=clsPlan(t,c).find(x=>x[0]===s);return p?'<td><select class="cell-in" data-c="'+esc(c)+'" data-s="'+esc(s)+'">'+opt((t.asg[c]||{})[s])+'</select><small class="num">'+ar(p[1])+' ح</small></td>':'<td class="na">—</td>';}).join('')+'</tr>').join('')+'</tbody></table></div>'+
-      '<div class="card"><h2>'+esc(jobG('أنصبة المعلمين'))+'</h2><div class="ttload">'+T.map(n=>'<span>'+esc(n)+' <b class="num">'+ar((L[n]||{p:0}).p)+'</b></span>').join('')+'</div></div>';
+      subs.map(s=>'<tr><th>'+esc(shortS(s))+'</th>'+C.map(c=>{const p=clsPlan(t,c).find(x=>x[0]===s);return p?'<td class="'+((t.asg[c]||{})[s]?'on':'')+'"><select class="cell-in" data-c="'+esc(c)+'" data-s="'+esc(s)+'">'+opt((t.asg[c]||{})[s])+'</select><small class="num">'+ar(p[1])+' ح</small></td>':'<td class="na">—</td>';}).join('')+'</tr>').join('')+'</tbody></table></div>'+
+'';
     const qT=body.querySelector('#qT'),qS=body.querySelector('#qS'),qC=body.querySelector('#qC');
     const showQ=()=>{const s=qS.value;qC.innerHTML=s?C.filter(c=>clsPlan(t,c).some(x=>x[0]===s)).map(c=>{const cur=(t.asg[c]||{})[s];return '<label><input type="checkbox" value="'+esc(c)+'"'+(cur&&cur===qT.value?' checked':'')+'> '+esc(c)+(cur&&cur!==qT.value?' <small>('+esc(cur)+')</small>':'')+'</label>';}).join(''):'';};
     qT.onchange=showQ;qS.onchange=showQ;
     body.querySelector('#qGo').onclick=async()=>{const n=qT.value,s=qS.value;if(!n||!s){toast(jobG('اختر المعلم والمادة'));return;}let k=0;
       qC.querySelectorAll('input').forEach(i=>{const c=i.value;t.asg[c]=t.asg[c]||{};if(i.checked){t.asg[c][s]=n;k++;}else if(t.asg[c][s]===n)delete t.asg[c][s];});
       await xSet('tt',t);await ttSyncAssign(t);toast(jobG('أُسندت المادة إلى '+n+' في '+ar(k)+' فصل، وانتقلت الفصول بطلابها إليه'));timetablePage();};
-    body.querySelector('.ttasg').addEventListener('change',async e=>{const x=e.target;if(!x.matches('[data-c]'))return;const c=x.dataset.c;t.asg[c]=t.asg[c]||{};if(x.value)t.asg[c][x.dataset.s]=x.value;else delete t.asg[c][x.dataset.s];await xSet('tt',t);await ttSyncAssign(t);toast('حُفظ الإسناد');});
+    body.querySelector('.ttasg').addEventListener('change',async e=>{const x=e.target;if(!x.matches('[data-c]'))return;const c=x.dataset.c;t.asg[c]=t.asg[c]||{};if(x.value)t.asg[c][x.dataset.s]=x.value;else delete t.asg[c][x.dataset.s];await xSet('tt',t);await ttSyncAssign(t);toast('حُفظ الإسناد');setTimeout(timetablePage,0);});
+    body.querySelector('#ttFair').onclick=async()=>{const r=ttAutoAssign(t);await xSet('tt',t);await ttSyncAssign(t);toast(r.done?jobG('أُسندت '+ar(r.done)+' مادة بالعدل')+(r.left.length?'، وبقيت مواد بلا معلم من تخصصها: '+r.left.slice(0,4).join('، '):''):(r.left.length?'لا يوجد معلم بتخصص: '+r.left.slice(0,4).join('، ')+'. اكتب التخصصات في قائمة الموظفين':'كل المواد مسندة'));timetablePage();};
+    body.querySelector('#swGo').onclick=async()=>{const a=body.querySelector('#swA').value,b=body.querySelector('#swB').value,m=body.querySelector('#swM').value;if(!a||!b||a===b){toast(jobG('اختر معلمَين مختلفين'));return;}let k=0;
+      Object.keys(t.asg).forEach(c=>Object.keys(t.asg[c]).forEach(sb=>{const v=t.asg[c][sb];if(v===a){t.asg[c][sb]=b;k++;}else if(v===b&&m==='swap'){t.asg[c][sb]=a;k++;}}));
+      const A=assignAll();const ca=A.by[a]||[],cb=A.by[b]||[];if(m==='swap'){A.by[a]=cb;A.by[b]=ca;}else{A.by[b]=[...new Set(cb.concat(ca))];A.by[a]=[];}await xSet('assign',A);
+      await xSet('tt',t);await ttSyncAssign(t);toast(m==='swap'?jobG('تبادل المعلمان '+ar(k)+' إسنادًا مع فصولهما'):jobG('نُقل '+ar(k)+' إسنادًا مع الفصول والطلاب'));timetablePage();};
   }
   function ttLoadTab(body,t){
     const L=teacherLoad(t),T=ttTeachers();
@@ -5847,12 +5963,20 @@ footer{padding-block:20px 40px;font-size:13px;color:var(--ink-soft)}
     else{grid='<div class="mwrap"><table class="mtable ttgrid"><thead><tr><th>اليوم</th>'+Array.from({length:mx},(_,k)=>'<th>'+PER_ORD[k]+'</th>').join('')+'</tr></thead><tbody>'+
         DAYS5.map((d,di)=>'<tr><th>'+d+'</th>'+Array.from({length:mx},(_,k)=>{const key=di+'-'+k,hits=C.filter(c=>{const s=(t.grid[c]||{})[key];return s&&slotTeacher(t,c,s)===cur;});
           return '<td class="'+(hits.length>1?'clash':'')+'">'+hits.map(c=>'<b>'+esc(c)+'</b><small>'+esc(shortS(t.grid[c][key]))+'</small>').join('')+'</td>';}).join('')+'</tr>').join('')+'</tbody></table></div>';}
-    body.innerHTML='<div class="card"><div class="row-actions"><button type="button" class="btn primary" id="ttGen">⚡ توليد الجدول تلقائيًا</button><button type="button" class="btn danger" id="ttClr">مسح الجدول</button><span class="status" id="ttSt">'+(bad.size?'⚠️ يوجد تعارض في '+ar(bad.size/2|0)+' حصة (ظاهر باللون الأحمر)':'')+'</span></div>'+
-      '<p class="status">'+esc(jobG('يوزّع التوليد حصص كل مادة على أيام الأسبوع دون تعارض للمعلم أو الفصل. أسند المواد للمعلمين قبل التوليد، ويمكنك تعديل أي حصة يدويًا بعده.'))+'</p></div>'+
+    const swapOn=mode==='cls'&&lsGet('ttswap',false);
+    if(swapOn)grid=grid.replace(/<select class="cell-in" data-k="(\d-\d)">[\s\S]*?<\/select>/g,(m0,k)=>{const sv=(t.grid[cur]||{})[k]||'';return '<button type="button" class="ttsw" data-sw="'+k+'">'+(sv?esc(shortS(sv)):'<i>فارغة</i>')+'</button>';});
+    body.innerHTML='<div class="card"><div class="row-actions"><button type="button" class="btn primary" id="ttGen">⚡ توليد الجدول تلقائيًا</button>'+(mode==='cls'?'<button type="button" class="btn'+(swapOn?' primary':'')+'" id="ttSwap">↔️ '+(swapOn?'إنهاء تحريك الحصص':'تحريك وتبديل الحصص')+'</button>':'')+'<button type="button" class="btn danger" id="ttClr">مسح الجدول</button><span class="status" id="ttSt">'+(bad.size?'⚠️ يوجد تعارض في '+ar(bad.size/2|0)+' حصة (ظاهر باللون الأحمر)':'')+'</span></div>'+
+      '<p class="status">'+esc(jobG('يوزّع التوليد حصص كل مادة على أيام الأسبوع بالعدل: دون تعارض، وتتوزع حصص كل معلم على الأيام بالتساوي، وتُقسم الحصص الأولى والأخيرة بين المعلمين، ويُتجنّب تتابع الحصص الطويل. ويمكنك تعديل أي حصة يدويًا أو تحريكها بعده.'))+'</p>'+(swapOn?'<p class="status ok">اضغط حصة ثم اضغط حصة أخرى (أو خانة فارغة) لتبديلهما. يُمنع التبديل إن تعارض مع حصص المعلم في فصل آخر.</p>':'')+'</div>'+
       '<div class="card"><div class="row-actions">'+seg('ttv',[['cls','جدول الفصل'],['tch',esc(jobG('جدول المعلم'))]],mode)+'<select id="ttCur" class="cell-in" style="flex:1;min-width:150px">'+(mode==='cls'?C:T).map(x=>'<option'+(x===cur?' selected':'')+'>'+esc(x)+'</option>').join('')+'</select></div>'+grid+'</div>';
     body.querySelectorAll('[name=ttv]').forEach(r=>r.onchange=()=>{lsSet('ttview',r.value);lsSet('ttcur','');timetablePage();});
     body.querySelector('#ttCur').onchange=e=>{lsSet('ttcur',e.target.value);timetablePage();};
     body.querySelectorAll('.ttgrid select').forEach(sl=>sl.onchange=()=>{t.grid[cur]=t.grid[cur]||{};if(sl.value)t.grid[cur][sl.dataset.k]=sl.value;else delete t.grid[cur][sl.dataset.k];save(true);});
+    const swb=body.querySelector('#ttSwap');if(swb)swb.onclick=()=>{lsSet('ttswap',!swapOn);timetablePage();};
+    let pick=null;body.querySelectorAll('[data-sw]').forEach(bt=>bt.onclick=async()=>{const k=bt.dataset.sw;if(!pick){pick=k;bt.classList.add('pick');return;}if(pick===k){pick=null;bt.classList.remove('pick');return;}
+      const g=t.grid[cur]=t.grid[cur]||{},a=g[pick]||'',b=g[k]||'',na=a?slotTeacher(t,cur,a):'',nb=b?slotTeacher(t,cur,b):'';
+      const busyAt=(n,key)=>n&&Object.keys(t.grid).some(c=>c!==cur&&(t.grid[c]||{})[key]&&slotTeacher(t,c,t.grid[c][key])===n);
+      if(busyAt(na,k)||busyAt(nb,pick)){toast(jobG('لا يمكن: '+(busyAt(na,k)?na:nb)+' لديه حصة في فصل آخر في هذا الوقت'));pick=null;timetablePage();return;}
+      if(b)g[pick]=b;else delete g[pick];if(a)g[k]=a;else delete g[k];pick=null;await xSet('tt',t);toast('بُدّلت الحصتان');timetablePage();});
     body.querySelector('#ttGen').onclick=async()=>{const st=body.querySelector('#ttSt');st.textContent='جارٍ التوليد…';await new Promise(r=>setTimeout(r,30));
       const r=ttGenerate(t);t.grid=r.grid;await xSet('tt',t);toast(r.miss?'وُلّد الجدول، وبقيت '+ar(r.miss)+' حصة لم تجد مكانًا؛ زد عدد الحصص اليومية أو عدّلها يدويًا':'وُلّد الجدول كاملًا دون تعارض');timetablePage();};
     const clr=body.querySelector('#ttClr');clr.onclick=()=>{if(!clr.classList.contains('armed')){clr.classList.add('armed');clr.textContent='تأكيد المسح';setTimeout(()=>{if(clr.isConnected){clr.classList.remove('armed');clr.textContent='مسح الجدول';}},4000);return;}t.grid={};save(true);};
